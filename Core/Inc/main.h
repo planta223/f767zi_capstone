@@ -57,26 +57,28 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define right_DIR_Pin GPIO_PIN_2
-#define right_DIR_GPIO_Port GPIOE
-#define slider_DIR_Pin GPIO_PIN_3
-#define slider_DIR_GPIO_Port GPIOE
-#define arm_DIR_Pin GPIO_PIN_4
-#define arm_DIR_GPIO_Port GPIOE
 #define USER_Btn_Pin GPIO_PIN_13
 #define USER_Btn_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOH
 #define batt_VOLT_Pin GPIO_PIN_0
 #define batt_VOLT_GPIO_Port GPIOC
-#define slider_PUL_Pin GPIO_PIN_1
+#define slider_DIR_Pin GPIO_PIN_3
+#define slider_DIR_GPIO_Port GPIOC
+#define slider_PUL_Pin GPIO_PIN_3
 #define slider_PUL_GPIO_Port GPIOA
+#define imu_CS_Pin GPIO_PIN_4
+#define imu_CS_GPIO_Port GPIOA
 #define left_HA_Pin GPIO_PIN_6
 #define left_HA_GPIO_Port GPIOA
 #define left_HB_Pin GPIO_PIN_7
 #define left_HB_GPIO_Port GPIOA
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
+#define left_PWM_Pin GPIO_PIN_9
+#define left_PWM_GPIO_Port GPIOE
+#define right_PWM_Pin GPIO_PIN_11
+#define right_PWM_GPIO_Port GPIOE
 #define LD3_Pin GPIO_PIN_14
 #define LD3_GPIO_Port GPIOB
 #define STLK_RX_Pin GPIO_PIN_8
@@ -87,16 +89,18 @@ void Error_Handler(void);
 #define right_HA_GPIO_Port GPIOD
 #define right_HB_Pin GPIO_PIN_13
 #define right_HB_GPIO_Port GPIOD
-#define arm_PUL_Pin GPIO_PIN_7
+#define arm_DIR_Pin GPIO_PIN_8
+#define arm_DIR_GPIO_Port GPIOC
+#define arm_PUL_Pin GPIO_PIN_9
 #define arm_PUL_GPIO_Port GPIOC
-#define left_PWM_Pin GPIO_PIN_8
-#define left_PWM_GPIO_Port GPIOA
-#define right_PWM_Pin GPIO_PIN_9
-#define right_PWM_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
+#define right_DIR_Pin GPIO_PIN_9
+#define right_DIR_GPIO_Port GPIOG
+#define left_DIR_Pin GPIO_PIN_14
+#define left_DIR_GPIO_Port GPIOG
 #define imu_SCK_Pin GPIO_PIN_3
 #define imu_SCK_GPIO_Port GPIOB
 #define imu_MISO_Pin GPIO_PIN_4
@@ -105,10 +109,6 @@ void Error_Handler(void);
 #define imu_MOSI_GPIO_Port GPIOB
 #define LD2_Pin GPIO_PIN_7
 #define LD2_GPIO_Port GPIOB
-#define imu_CS_Pin GPIO_PIN_0
-#define imu_CS_GPIO_Port GPIOE
-#define left_DIR_Pin GPIO_PIN_1
-#define left_DIR_GPIO_Port GPIOE
 
 /* USER CODE BEGIN Private defines */
 
