@@ -11,7 +11,7 @@
 /* =========================================
  * motor.c
  * ========================================= */
-#define MOTOR_PWM_MAX          10799     // TIM1 ARR = 8999
+#define MOTOR_PWM_MAX          10799     // TIM1 ARR = 10799
 
 /* =========================================
  * encoder.c
@@ -39,7 +39,7 @@
  * ========================================= */
 #define CONTROL_TS_S          0.01f  // 제어 주기
 #define CTRL_KP               50.0f  // P 계수
-#define CTRL_KI               1000.0f   // I 계수
+#define CTRL_KI               500.0f   // I 계수
 #define CTRL_I_LIMIT          300.0f // Anti-windup 계수
 
 #define CMD_V_MAX_MPS         0.50f  // 입력 선속도 제한
