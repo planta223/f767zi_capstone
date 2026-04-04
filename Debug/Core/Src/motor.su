@@ -1,0 +1,6 @@
+../Core/Src/motor.c:17:17:Motor_AbsClampPWM	16	static
+../Core/Src/motor.c:31:6:Motor_Init	8	static
+../Core/Src/motor.c:49:6:Motor_Left_SetCommand	24	static
+../Core/Src/motor.c:65:6:Motor_Right_SetCommand	24	static
+../Core/Src/motor.c:81:6:Motor_Both_SetCommand	16	static
+../Core/Src/motor.c:87:6:Motor_StopAll	4	static

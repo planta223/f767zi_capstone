@@ -1,0 +1,12 @@
+../Core/Src/control.c:20:14:ClampFloat	24	static
+../Core/Src/control.c:32:6:Control_Init	4	static
+../Core/Src/control.c:59:6:Control_SetTargetRPM	16	static
+../Core/Src/control.c:65:6:Control_SetTargetVW	24	static
+../Core/Src/control.c:87:6:Control_Update	16	static
+../Core/Src/control.c:127:6:Control_Stop	8	static
+../Core/Src/control.c:145:7:Control_GetLeftRefRPM	4	static
+../Core/Src/control.c:146:7:Control_GetLeftMeasRPM	4	static
+../Core/Src/control.c:147:9:Control_GetLeftPwmCmd	4	static
+../Core/Src/control.c:149:7:Control_GetRightRefRPM	4	static
+../Core/Src/control.c:150:7:Control_GetRightMeasRPM	4	static
+../Core/Src/control.c:151:9:Control_GetRightPwmCmd	4	static

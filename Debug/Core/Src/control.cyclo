@@ -1,0 +1,12 @@
+../Core/Src/control.c:20:14:ClampFloat	3
+../Core/Src/control.c:32:6:Control_Init	1
+../Core/Src/control.c:59:6:Control_SetTargetRPM	1
+../Core/Src/control.c:65:6:Control_SetTargetVW	1
+../Core/Src/control.c:87:6:Control_Update	5
+../Core/Src/control.c:127:6:Control_Stop	1
+../Core/Src/control.c:145:7:Control_GetLeftRefRPM	1
+../Core/Src/control.c:146:7:Control_GetLeftMeasRPM	1
+../Core/Src/control.c:147:9:Control_GetLeftPwmCmd	1
+../Core/Src/control.c:149:7:Control_GetRightRefRPM	1
+../Core/Src/control.c:150:7:Control_GetRightMeasRPM	1
+../Core/Src/control.c:151:9:Control_GetRightPwmCmd	1
