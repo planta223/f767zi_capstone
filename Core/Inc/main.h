@@ -71,8 +71,6 @@ void Error_Handler(void);
 #define imu_CS_GPIO_Port GPIOA
 #define left_HA_Pin GPIO_PIN_6
 #define left_HA_GPIO_Port GPIOA
-#define left_HB_Pin GPIO_PIN_7
-#define left_HB_GPIO_Port GPIOA
 #define LD1_Pin GPIO_PIN_0
 #define LD1_GPIO_Port GPIOB
 #define left_PWM_Pin GPIO_PIN_9
@@ -89,6 +87,8 @@ void Error_Handler(void);
 #define right_HA_GPIO_Port GPIOD
 #define right_HB_Pin GPIO_PIN_13
 #define right_HB_GPIO_Port GPIOD
+#define left_HB_Pin GPIO_PIN_7
+#define left_HB_GPIO_Port GPIOC
 #define arm_DIR_Pin GPIO_PIN_8
 #define arm_DIR_GPIO_Port GPIOC
 #define arm_PUL_Pin GPIO_PIN_9
