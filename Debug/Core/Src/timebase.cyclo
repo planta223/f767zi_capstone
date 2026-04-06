@@ -1,3 +1,0 @@
-../Core/Src/timebase.c:21:6:Timebase_Init	1
-../Core/Src/timebase.c:33:10:Timebase_GetMicros	1
-../Core/Src/timebase.c:38:10:Timebase_GetMillis	1
