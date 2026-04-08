@@ -45,5 +45,19 @@
 #define CMD_V_MAX_MPS         0.50f  // 입력 선속도 제한
 #define CMD_W_MAX_RADPS       3.00f  // 입력 각속도 제한
 
+/* =========================================
+ * stepper.c
+ * ========================================= */
+#define STEPPER_DIR_SETUP_US          10U
+
+#define STEPPER_SLIDER_MIN_HZ         1.0f
+#define STEPPER_SLIDER_MAX_HZ         3000.0f
+
+#define STEPPER_ARM_MIN_HZ            1.0f
+#define STEPPER_ARM_MAX_HZ            2000.0f
+
+#define STEPPER_PWM_DUTY_NUM          1U
+#define STEPPER_PWM_DUTY_DEN          2U
+
 
 #endif /* INC_CONFIG_H_ */

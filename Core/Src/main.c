@@ -32,6 +32,7 @@
 #include "odometry.h"
 #include "control.h"
 #include "timebase.h"
+#include "stepper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -214,6 +215,11 @@ void SystemClock_Config(void)
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     Protocol_RxCallback(huart);
+}
+
+void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
+{
+    Stepper_PulseFinishedCallback(htim);
 }
 /* USER CODE END 4 */
 
