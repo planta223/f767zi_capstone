@@ -215,6 +215,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
     Protocol_RxCallback(huart);
 }
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+    Stepper_PeriodElapsedCallback(htim);
+}
 /* USER CODE END 4 */
 
 /**

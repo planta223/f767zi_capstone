@@ -39,11 +39,16 @@
  * ========================================= */
 #define CONTROL_TS_S          0.01f  // 제어 주기
 #define CTRL_KP               50.0f  // P 계수
-#define CTRL_KI               500.0f   // I 계수
+#define CTRL_KI               500.0f // I 계수
 #define CTRL_I_LIMIT          300.0f // Anti-windup 계수
 
 #define CMD_V_MAX_MPS         0.50f  // 입력 선속도 제한
 #define CMD_W_MAX_RADPS       3.00f  // 입력 각속도 제한
 
+/* =========================================
+ * stepper.c
+ * ========================================= */
+#define STEPPER_STEPS_MAX     1000   //
+#define STEPPER_PULSE_DUTY    500
 
 #endif /* INC_CONFIG_H_ */
