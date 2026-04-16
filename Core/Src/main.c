@@ -141,7 +141,7 @@ int main(void)
       {
           prev_50ms += 50U;
 
-          Protocol_SendOdometryBinary(
+          Protocol_SendOdometry(
               Timebase_GetMicros(), // t_us
               Odometry_GetX(),
               Odometry_GetY(),

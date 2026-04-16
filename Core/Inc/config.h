@@ -23,8 +23,18 @@
 /* =========================================
  * protocol.c
  * ========================================= */
-#define PROTOCOL_RX_BUF_SIZE   16U
-#define PROTOCOL_CMD           2000.0f
+#define PROTOCOL_SOF1                 0xAAU
+#define PROTOCOL_SOF2                 0x55U
+
+#define PROTOCOL_TX_MSG_TYPE_ODOM     0x01U
+#define PROTOCOL_TX_FRAME_SIZE_ODOM   28U
+
+#define PROTOCOL_RX_FRAME_MAX_SIZE    32U
+#define PROTOCOL_RX_MSG_TYPE_CMD_VW   0x02U
+#define PROTOCOL_RX_FRAME_SIZE_CMD_VW 12U
+
+
+#define CMD_TIMEOUT_MS                200U
 
 /* =========================================
  * odometry.c
