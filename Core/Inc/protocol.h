@@ -19,6 +19,7 @@ void Protocol_SendOdometry(uint32_t t_us,
                            float yaw_rad,
                            float v_mps,
                            float w_radps);
+void Protocol_SendDropoffDone(void);
 
 
 void Protocol_RxCallback(UART_HandleTypeDef *huart);

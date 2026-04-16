@@ -146,7 +146,7 @@ static void Protocol_WriteFloatLE(uint8_t *buf, float value)
 }
 
 // checksum 1바이트 계산 (odometry 전용)
-static uint8_t Protocol_Checksum(const uint8_t *buf, uint16_t len)
+static uint8_t Checksum(const uint8_t *buf, uint16_t len)
 {
     uint8_t sum = 0U;
     uint16_t i;
@@ -164,19 +164,21 @@ static uint8_t Protocol_Checksum(const uint8_t *buf, uint16_t len)
  * RX static
  * ========================================= */
 /*
-    rx_byte         : UART 인터럽트로 한 바이트 받을 임시 저장소
-	rx_frame[]      : 조립 중인 수신 프레임 버퍼
-	rx_state        : SOF1 대기 / SOF2 대기 / payload 수집 상태
-	rx_index        : 현재 몇 바이트까지 모았는지
-	rx_expected_len : msg_type에 따른 프레임 길이
-	rx_frame_ready  : 한 프레임 완성되었음을 main loop에 알리는 플래그
+    rx_byte           : UART 인터럽트로 한 바이트 받을 임시 저장소
+	rx_frame[]        : 조립 중인 수신 프레임 버퍼
+	rx_state          : SOF1 대기 / SOF2 대기 / payload 수집 상태
+	rx_index          : 현재 몇 바이트까지 모았는지
+	rx_expected_len   : msg_type에 따른 프레임 길이
+	rx_frame_ready    : 한 프레임 완성되었음을 main loop에 알리는 플래그
+	last_heartbeat_ms : 마지막으로 수신한 hearbeat 시각
 */
 static uint8_t rx_byte;
-static uint8_t rx_frame[PROTOCOL_RX_FRAME_MAX_SIZE];
+static uint8_t rx_frame[RX_FRAME_MAX_SIZE];
 static uint8_t rx_state = RX_STATE_WAIT_SOF1;
 static volatile uint16_t rx_index = 0U;
 static volatile uint16_t rx_expected_len = 0U;
 static volatile uint8_t rx_frame_ready = 0U;
+static volatile uint32_t last_heartbeat_ms = 0U;
 
 // little endian 4바이트를 float로 계산 (vw_command 전용)
 static float Protocol_ReadFloatLE(const uint8_t *buf)
@@ -200,17 +202,14 @@ static uint16_t Protocol_GetRxFrameSizeByType(uint8_t msg_type)
 {
     switch (msg_type)
     {
-        case PROTOCOL_RX_MSG_TYPE_CMD_VW:
-            return PROTOCOL_RX_FRAME_SIZE_CMD_VW;
+        case MSG_TYPE_VW:
+            return FRAME_SIZE_VW;
 
-        /* 다른 메시지 타입 */
-        /*
-        case PROTOCOL_RX_MSG_TYPE_HEARTBEAT:
-            return 4U;    // 예시: AA 55 type checksum
+        case MSG_TYPE_DROPOFF_START:
+            return FRAME_SIZE_DROPOFF_START;
 
-        case PROTOCOL_RX_MSG_TYPE_ESTOP:
-            return 5U;    // 예시
-        */
+        case MSG_TYPE_HEARTBEAT:
+            return FRAME_SIZE_HEARTBEAT;
 
         default:
             return 0U;    // unknown
@@ -227,6 +226,7 @@ void Protocol_Init(void)
     rx_index = 0U;
     rx_expected_len = 0U;
     rx_frame_ready = 0U;
+    last_heartbeat_ms = 0U;
     memset(rx_frame, 0, sizeof(rx_frame));
 
     HAL_UART_Receive_IT(&huart3, &rx_byte, 1U);
@@ -261,11 +261,11 @@ void Protocol_SendOdometry(uint32_t t_us,
                            float v_mps,
                            float w_radps)
 {
-    uint8_t frame[28];
+    uint8_t frame[FRAME_SIZE_ODOM];
 
     frame[0] = PROTOCOL_SOF1;
     frame[1] = PROTOCOL_SOF2;
-    frame[2] = PROTOCOL_TX_MSG_TYPE_ODOM;
+    frame[2] = MSG_TYPE_ODOM;
 
     Protocol_WriteU32LE(&frame[3],  t_us);
     Protocol_WriteFloatLE(&frame[7],  x_m);
@@ -274,10 +274,24 @@ void Protocol_SendOdometry(uint32_t t_us,
     Protocol_WriteFloatLE(&frame[19], v_mps);
     Protocol_WriteFloatLE(&frame[23], w_radps);
 
-    frame[PROTOCOL_TX_FRAME_SIZE_ODOM - 1U] =
-        Protocol_Checksum(frame, PROTOCOL_TX_FRAME_SIZE_ODOM - 1U);
+    frame[FRAME_SIZE_ODOM - 1U] =
+    		Checksum(frame, FRAME_SIZE_ODOM - 1U);
 
-    HAL_UART_Transmit(&huart3, frame, 28U, 10);
+    HAL_UART_Transmit(&huart3, frame, FRAME_SIZE_ODOM, 10);
+}
+
+void Protocol_SendDropoffDone(void)
+{
+    uint8_t frame[FRAME_SIZE_DROPOFF_DONE];
+
+    frame[0] = PROTOCOL_SOF1;
+    frame[1] = PROTOCOL_SOF2;
+    frame[2] = MSG_TYPE_DROPOFF_DONE;
+
+    frame[FRAME_SIZE_DROPOFF_DONE - 1U] =
+    		Checksum(frame, FRAME_SIZE_DROPOFF_DONE - 1U);
+
+    HAL_UART_Transmit(&huart3, frame, FRAME_SIZE_DROPOFF_DONE, 10);
 }
 
 /* =========================
@@ -326,7 +340,7 @@ void Protocol_RxCallback(UART_HandleTypeDef *huart)
             break;
 
         case RX_STATE_COLLECT:
-            if (rx_index < PROTOCOL_RX_FRAME_MAX_SIZE)
+            if (rx_index < RX_FRAME_MAX_SIZE)
             {
                 rx_frame[rx_index++] = rx_byte;
             }
@@ -344,7 +358,7 @@ void Protocol_RxCallback(UART_HandleTypeDef *huart)
                 rx_expected_len = Protocol_GetRxFrameSizeByType(rx_frame[2]);
 
                 if ((rx_expected_len == 0U) ||
-                    (rx_expected_len > PROTOCOL_RX_FRAME_MAX_SIZE))
+                    (rx_expected_len > RX_FRAME_MAX_SIZE))
                 {
                     rx_index = 0U;
                     rx_expected_len = 0U;
@@ -430,6 +444,7 @@ void Protocol_Process(void)
     uint16_t frame_len; // msg_type에 따라 결정된 현재 프레임 전체 길이
     float v_mps;
     float w_radps;
+    uint8_t target_id;
     /* 변수 추가 가능 */
 
     if (rx_frame_ready == 0U)
@@ -447,7 +462,7 @@ void Protocol_Process(void)
         return;
     }
 
-    calc_xor = Protocol_Checksum(rx_frame, frame_len - 1U);
+    calc_xor = Checksum(rx_frame, frame_len - 1U);
     recv_xor = rx_frame[frame_len - 1U];
 
     if (calc_xor != recv_xor)
@@ -457,21 +472,23 @@ void Protocol_Process(void)
 
     switch (msg_type)
     {
-        case PROTOCOL_RX_MSG_TYPE_CMD_VW:
+        case MSG_TYPE_VW:
             v_mps   = Protocol_ReadFloatLE(&rx_frame[3]);
             w_radps = Protocol_ReadFloatLE(&rx_frame[7]);
             Control_SetTargetVW(v_mps, w_radps);
             break;
 
-        /*
-        case PROTOCOL_RX_MSG_TYPE_HEARTBEAT:
-            // 기능 1. ex) heartbeat 처리
-            break;
+        case MSG_TYPE_DROPOFF_START:
+        	target_id = rx_frame[3];
 
-        case PROTOCOL_RX_MSG_TYPE_ESTOP:
-            // 기능 2. ex) estop 처리
+        	// 주행 정지 후 target_id에 맞는 하차 시퀀스 시작
+        	// Control_Stop();
+        	// Dropoff_Start(target_id);
+        	break;
+
+        case MSG_TYPE_HEARTBEAT:
+        	last_heartbeat_ms = HAL_GetTick();
             break;
-        */
 
         default:
             break;

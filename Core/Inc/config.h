@@ -23,18 +23,23 @@
 /* =========================================
  * protocol.c
  * ========================================= */
-#define PROTOCOL_SOF1                 0xAAU
-#define PROTOCOL_SOF2                 0x55U
+#define PROTOCOL_SOF1               0xAAU
+#define PROTOCOL_SOF2               0x55U
 
-#define PROTOCOL_TX_MSG_TYPE_ODOM     0x01U
-#define PROTOCOL_TX_FRAME_SIZE_ODOM   28U
+#define MSG_TYPE_ODOM           	0x01U  // 송신
+#define MSG_TYPE_VW             	0x02U  // 수신
+#define MSG_TYPE_DROPOFF_START  	0x03U  // 수신
+#define MSG_TYPE_DROPOFF_DONE   	0x04U  // 송신
+#define MSG_TYPE_HEARTBEAT      	0x05U  // 수신
 
-#define PROTOCOL_RX_FRAME_MAX_SIZE    32U
-#define PROTOCOL_RX_MSG_TYPE_CMD_VW   0x02U
-#define PROTOCOL_RX_FRAME_SIZE_CMD_VW 12U
+#define FRAME_SIZE_ODOM             28U
+#define FRAME_SIZE_VW               12U
+#define FRAME_SIZE_DROPOFF_START    5U
+#define FRAME_SIZE_DROPOFF_DONE     4U
+#define FRAME_SIZE_HEARTBEAT        4U
 
-
-#define CMD_TIMEOUT_MS                200U
+#define RX_FRAME_MAX_SIZE           12U
+#define TIMEOUT_MS                  200U
 
 /* =========================================
  * odometry.c
