@@ -10,6 +10,7 @@
 #include "config.h"
 
 #include "control.h"
+#include "failsafe.h"
 
 #include <string.h>
 
@@ -170,7 +171,6 @@ static uint8_t Checksum(const uint8_t *buf, uint16_t len)
 	rx_index          : 현재 몇 바이트까지 모았는지
 	rx_expected_len   : msg_type에 따른 프레임 길이
 	rx_frame_ready    : 한 프레임 완성되었음을 main loop에 알리는 플래그
-	last_heartbeat_ms : 마지막으로 수신한 hearbeat 시각
 */
 static uint8_t rx_byte;
 static uint8_t rx_frame[RX_FRAME_MAX_SIZE];
@@ -178,7 +178,6 @@ static uint8_t rx_state = RX_STATE_WAIT_SOF1;
 static volatile uint16_t rx_index = 0U;
 static volatile uint16_t rx_expected_len = 0U;
 static volatile uint8_t rx_frame_ready = 0U;
-static volatile uint32_t last_heartbeat_ms = 0U;
 
 // little endian 4바이트를 float로 계산 (vw_command 전용)
 static float Protocol_ReadFloatLE(const uint8_t *buf)
@@ -226,7 +225,6 @@ void Protocol_Init(void)
     rx_index = 0U;
     rx_expected_len = 0U;
     rx_frame_ready = 0U;
-    last_heartbeat_ms = 0U;
     memset(rx_frame, 0, sizeof(rx_frame));
 
     HAL_UART_Receive_IT(&huart3, &rx_byte, 1U);
@@ -473,12 +471,22 @@ void Protocol_Process(void)
     switch (msg_type)
     {
         case MSG_TYPE_VW:
+            if (Failsafe_IsHeartbeatTimeout() == 1U)
+            {
+                break;   // timeout 상태에서는 주행명령 무시
+            }
+
             v_mps   = Protocol_ReadFloatLE(&rx_frame[3]);
             w_radps = Protocol_ReadFloatLE(&rx_frame[7]);
             Control_SetTargetVW(v_mps, w_radps);
             break;
 
         case MSG_TYPE_DROPOFF_START:
+            if (Failsafe_IsHeartbeatTimeout() == 1U)
+            {
+                break;   // timeout 상태에서는 dropoff도 무시
+            }
+
         	target_id = rx_frame[3];
 
         	// 주행 정지 후 target_id에 맞는 하차 시퀀스 시작
@@ -487,7 +495,7 @@ void Protocol_Process(void)
         	break;
 
         case MSG_TYPE_HEARTBEAT:
-        	last_heartbeat_ms = HAL_GetTick();
+        	Failsafe_NotifyHeartbeat(HAL_GetTick());
             break;
 
         default:

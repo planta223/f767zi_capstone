@@ -66,4 +66,9 @@
 #define STEPPER_STEPS_MAX     1000   //
 #define STEPPER_PULSE_DUTY    500
 
+/* =========================================
+ * failsafe.c
+ * ========================================= */
+#define HEARTBEAT_TIMEOUT_MS   500U
+
 #endif /* INC_CONFIG_H_ */

@@ -28,10 +28,12 @@
 /* USER CODE BEGIN Includes */
 #include "motor.h"
 #include "encoder.h"
+#include "stepper.h"
 #include "protocol.h"
 #include "odometry.h"
 #include "control.h"
 #include "timebase.h"
+#include "failsafe.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -108,9 +110,11 @@ int main(void)
 
   Motor_Init();
   Encoder_Init();
+  Stepper_Init();
   Odometry_Init();
   Control_Init();
   Timebase_Init();
+  Failsafe_Init();
   Protocol_Init();
 
   uint32_t prev_10ms = 0U;
@@ -124,8 +128,8 @@ int main(void)
   {
       uint32_t now = HAL_GetTick();
 
-      /* UART로 들어온 명령 처리 */
-      Protocol_Process();
+      Protocol_Process();   // UART 수신 명령 처리
+      Failsafe_Update(now); // Timeout 확인
 
       /* 10 ms 주기 제어 */
       if ((now - prev_10ms) >= 10U)
