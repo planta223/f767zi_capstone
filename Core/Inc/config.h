@@ -63,8 +63,15 @@
 /* =========================================
  * stepper.c
  * ========================================= */
-#define STEPPER_STEPS_MAX     1000   //
+#define STEPPER_STEPS_MAX     1000 // 예시값
 #define STEPPER_PULSE_DUTY    500
+
+#define STEPPER_STARTUP_SLIDER_HOMING_STEPS -10000
+
+#define SLIDER_OFFSET_STEPS   1000 // 예시값
+#define SLIDER_GAP_STEPS      800 // 예시값
+
+#define ARM_SIDE_STEPS        500 // 예시값
 
 /* =========================================
  * failsafe.c

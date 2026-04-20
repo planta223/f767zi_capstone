@@ -11,6 +11,7 @@
 
 #include "control.h"
 #include "failsafe.h"
+#include "stepper.h"
 
 #include <string.h>
 
@@ -476,6 +477,11 @@ void Protocol_Process(void)
                 break;   // timeout 상태에서는 주행명령 무시
             }
 
+            if (Stepper_IsBusy() == 1U)
+            {
+                break; // stepper busy 일때는 주행명령 무시
+            }
+
             v_mps   = Protocol_ReadFloatLE(&rx_frame[3]);
             w_radps = Protocol_ReadFloatLE(&rx_frame[7]);
             Control_SetTargetVW(v_mps, w_radps);
@@ -489,9 +495,8 @@ void Protocol_Process(void)
 
         	target_id = rx_frame[3];
 
-        	// 주행 정지 후 target_id에 맞는 하차 시퀀스 시작
-        	// Control_Stop();
-        	// Dropoff_Start(target_id);
+            Control_Stop();
+            Stepper_Dropoff_Start(target_id);
         	break;
 
         case MSG_TYPE_HEARTBEAT:

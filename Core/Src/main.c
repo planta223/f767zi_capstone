@@ -110,10 +110,10 @@ int main(void)
 
   Motor_Init();
   Encoder_Init();
-  Stepper_Init();
   Odometry_Init();
   Control_Init();
   Timebase_Init();
+  Stepper_Init();
   Failsafe_Init();
   Protocol_Init();
 
@@ -129,7 +129,13 @@ int main(void)
       uint32_t now = HAL_GetTick();
 
       Protocol_Process();   // UART 수신 명령 처리
+      Stepper_Update();
       Failsafe_Update(now); // Timeout 확인
+
+      if (Stepper_GetAndClearDropoffDone() == 1U)
+      {
+          Protocol_SendDropoffDone();
+      }
 
       /* 10 ms 주기 제어 */
       if ((now - prev_10ms) >= 10U)
@@ -137,7 +143,8 @@ int main(void)
           prev_10ms += 10U;
 
           Encoder_Update();
-          Control_Update();
+          if (Stepper_IsBusy() == 0U)
+        	  Control_Update();
           Odometry_Update();
       }
 
