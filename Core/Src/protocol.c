@@ -385,56 +385,7 @@ void Protocol_RxCallback(UART_HandleTypeDef *huart)
     HAL_UART_Receive_IT(&huart3, &rx_byte, 1U);
 }
 
-/* ASCII 주행명령 수신 함수 (모터 구동) */
-void Protocol_ReceiveASCII_debug(const char *line)
-{
-    float v_mps;
-    float w_radps;
-
-    if (line == NULL || line[0] == '\0')
-    {
-        return;
-    }
-
-    switch (line[0])
-    {
-        case '8':   /* Forward */
-            v_mps   = 0.1;
-            w_radps = 0;
-            Control_SetTargetVW(v_mps, w_radps);
-            break;
-
-        case '2':   /* Backward */
-            v_mps   = -0.1;
-            w_radps = 0;
-            Control_SetTargetVW(v_mps, w_radps);
-            break;
-
-        case '4':   /* Left turn */
-            v_mps   = 0;
-            w_radps = 0.2;
-            Control_SetTargetVW(v_mps, w_radps);
-            break;
-
-        case '6':   /* Right turn */
-            v_mps   = 0;
-            w_radps = -0.2;
-            Control_SetTargetVW(v_mps, w_radps);
-            break;
-
-        case '5':   /* Stop */
-            v_mps   = 0;
-            w_radps = 0;
-            Control_SetTargetVW(v_mps, w_radps);
-        	break;
-
-        default:
-            // do nothing
-            break;
-    }
-}
-
-/* Binary 주행명령 수신 함수 (모터 구동) */
+/* 주행명령 수신 함수 (모터 구동) */
 void Protocol_Process(void)
 {
     uint8_t calc_xor;   // 수신 프레임 데이터로부터 계산한 checksum 값

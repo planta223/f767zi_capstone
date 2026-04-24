@@ -23,7 +23,6 @@ void Protocol_SendDropoffDone(void);
 
 
 void Protocol_RxCallback(UART_HandleTypeDef *huart);
-void Protocol_ReceiveASCII_debug(const char *line);
 void Protocol_Process(void);
 
 
