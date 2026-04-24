@@ -236,3 +236,12 @@ int16_t Control_GetLeftPwmCmd(void)  { return ctrl.left.pwm_cmd;   }
 float Control_GetRightRefRPM(void)   { return ctrl.right.ref_rpm;  }
 float Control_GetRightMeasRPM(void)  { return ctrl.right.meas_rpm; }
 int16_t Control_GetRightPwmCmd(void) { return ctrl.right.pwm_cmd;  }
+
+float Control_GetCmdV(void) { return ctrl.v_cmd_mps; }
+float Control_GetCmdW(void) { return ctrl.w_cmd_radps; }
+
+float Control_GetRefV(void) { return ctrl.v_ref_mps; }
+float Control_GetRefW(void) { return ctrl.w_ref_radps; }
+
+float Control_GetLeftIntegral(void)  { return ctrl.left.integral; }
+float Control_GetRightIntegral(void) { return ctrl.right.integral; }
