@@ -86,41 +86,79 @@ void Control_SetTargetVW(float v_mps, float w_radps)
 
 void Control_Update(void)
 {
-    float left_u;
-    float right_u;
+    float left_p;
+    float right_p;
 
-    // 현재 rpm 측정
+    float left_i_candidate;
+    float right_i_candidate;
+
+    float left_u_unsat;
+    float right_u_unsat;
+
+    float left_u_sat;
+    float right_u_sat;
+
+    /* 1. 현재 rpm 측정 */
     ctrl.left.meas_rpm  = Encoder_Left_GetRpm();
     ctrl.right.meas_rpm = Encoder_Right_GetRpm();
 
-    // 현재 error 계산
+    /* 2. 현재 error 계산 */
     ctrl.left.err  = ctrl.left.ref_rpm  - ctrl.left.meas_rpm;
     ctrl.right.err = ctrl.right.ref_rpm - ctrl.right.meas_rpm;
 
-    // 현재 오차 적분값 계산
-    ctrl.left.integral  += ctrl.left.err  * CONTROL_TS_S;
-    ctrl.right.integral += ctrl.right.err * CONTROL_TS_S;
+    /* 3. P항 계산 */
+    left_p  = CTRL_KP * ctrl.left.err;
+    right_p = CTRL_KP * ctrl.right.err;
 
-    // anti-windup
-    ctrl.left.integral  = ClampFloat(ctrl.left.integral,  -CTRL_I_LIMIT, CTRL_I_LIMIT);
-    ctrl.right.integral = ClampFloat(ctrl.right.integral, -CTRL_I_LIMIT, CTRL_I_LIMIT);
+    /* 4. 적분 후보값 계산 */
+    left_i_candidate  = ctrl.left.integral  + ctrl.left.err  * CONTROL_TS_S;
+    right_i_candidate = ctrl.right.integral + ctrl.right.err * CONTROL_TS_S;
 
-    // PI 출력 계산
-    left_u  = CTRL_KP * ctrl.left.err  + CTRL_KI * ctrl.left.integral;
-    right_u = CTRL_KP * ctrl.right.err + CTRL_KI * ctrl.right.integral;
+    /* 5. 적분 후보값 제한 */
+    left_i_candidate  = ClampFloat(left_i_candidate,  -CTRL_I_LIMIT, CTRL_I_LIMIT);
+    right_i_candidate = ClampFloat(right_i_candidate, -CTRL_I_LIMIT, CTRL_I_LIMIT);
 
-    // 출력 saturation
-    if (left_u > MOTOR_PWM_MAX) left_u = MOTOR_PWM_MAX;
-    if (left_u < -MOTOR_PWM_MAX) left_u = -MOTOR_PWM_MAX;
+    /* 6. 적분 후보값을 반영했을 때의 출력 계산 */
+    left_u_unsat  = left_p  + CTRL_KI * left_i_candidate;
+    right_u_unsat = right_p + CTRL_KI * right_i_candidate;
 
-    if (right_u > MOTOR_PWM_MAX) right_u = MOTOR_PWM_MAX;
-    if (right_u < -MOTOR_PWM_MAX) right_u = -MOTOR_PWM_MAX;
+    /* 7. 출력 saturation */
+    left_u_sat  = ClampFloat(left_u_unsat,  -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
+    right_u_sat = ClampFloat(right_u_unsat, -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
 
-    // 최종 명령 저장
-    ctrl.left.pwm_cmd  = (int16_t)left_u;
-    ctrl.right.pwm_cmd = (int16_t)right_u;
+    /*
+     * 8. Conditional integration anti-windup
+     *
+     * 출력이 포화되지 않았으면 적분 반영.
+     * +포화 상태에서 error가 음수이면 포화를 줄이는 방향이므로 적분 반영.
+     * -포화 상태에서 error가 양수이면 포화를 줄이는 방향이므로 적분 반영.
+     */
+    if ((left_u_unsat == left_u_sat) ||
+        ((left_u_sat >=  MOTOR_PWM_MAX) && (ctrl.left.err < 0.0f)) ||
+        ((left_u_sat <= -MOTOR_PWM_MAX) && (ctrl.left.err > 0.0f)))
+    {
+        ctrl.left.integral = left_i_candidate;
+    }
 
-    // 모터 출력
+    if ((right_u_unsat == right_u_sat) ||
+        ((right_u_sat >=  MOTOR_PWM_MAX) && (ctrl.right.err < 0.0f)) ||
+        ((right_u_sat <= -MOTOR_PWM_MAX) && (ctrl.right.err > 0.0f)))
+    {
+        ctrl.right.integral = right_i_candidate;
+    }
+
+    /* 9. 최종 출력 재계산 */
+    left_u_unsat  = left_p  + CTRL_KI * ctrl.left.integral;
+    right_u_unsat = right_p + CTRL_KI * ctrl.right.integral;
+
+    left_u_sat  = ClampFloat(left_u_unsat,  -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
+    right_u_sat = ClampFloat(right_u_unsat, -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
+
+    /* 10. 최종 명령 저장 */
+    ctrl.left.pwm_cmd  = (int16_t)left_u_sat;
+    ctrl.right.pwm_cmd = (int16_t)right_u_sat;
+
+    /* 11. 모터 출력 */
     Motor_Both_SetCommand(ctrl.left.pwm_cmd, ctrl.right.pwm_cmd);
 }
 
