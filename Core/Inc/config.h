@@ -55,10 +55,15 @@
 #define CONTROL_TS_S            0.01f  // 제어 주기
 #define CTRL_KP                 50.0f  // P 계수
 #define CTRL_KI                 500.0f // I 계수
-#define CTRL_I_LIMIT            300.0f // Anti-windup 계수
+#define CTRL_I_LIMIT            5.0f   // Anti-windup 계수
+
+#define CTRL_REF_ZERO_EPS_RPM   0.5f
 
 #define CMD_V_MAX_MPS           0.12f  // 입력 선속도 제한
 #define CMD_W_MAX_RADPS         0.30f  // 입력 각속도 제한
+
+#define CMD_V_ACCEL_MAX_MPS2        0.05f // 일단 보수적으로. 0.10으로 합의
+#define CMD_W_ACCEL_MAX_RADPS2      0.15f // 일단 보수적으로. 0.25으로 합의
 
 /* =========================================
  * stepper.c

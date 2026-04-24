@@ -24,6 +24,24 @@ static float ClampFloat(float x, float min_val, float max_val)
     return x;
 }
 
+static float RampFloat(float current, float target, float max_delta)
+{
+    float diff = target - current;
+
+    if (diff > max_delta)
+    {
+        return current + max_delta;
+    }
+    else if (diff < -max_delta)
+    {
+        return current - max_delta;
+    }
+    else
+    {
+        return target;
+    }
+}
+
 /* =========================================
  * 모든 x.c 파일에는 X_Init(); 함수가 존재해야 한다.
  * ========================================= */
@@ -31,6 +49,9 @@ static float ClampFloat(float x, float min_val, float max_val)
 
 void Control_Init(void)
 {
+    ctrl.v_cmd_mps = 0.0f;
+    ctrl.w_cmd_radps = 0.0f;
+
     ctrl.v_ref_mps = 0.0f;
     ctrl.w_ref_radps = 0.0f;
 
@@ -70,17 +91,8 @@ void Control_SetTargetVW(float v_mps, float w_radps)
     v_mps   = ClampFloat(v_mps,   -CMD_V_MAX_MPS,   CMD_V_MAX_MPS);
     w_radps = ClampFloat(w_radps, -CMD_W_MAX_RADPS, CMD_W_MAX_RADPS);
 
-    ctrl.v_ref_mps = v_mps;
-    ctrl.w_ref_radps = w_radps;
-
-    v_left  = v_mps - 0.5f * WHEEL_BASE_M * w_radps;
-    v_right = v_mps + 0.5f * WHEEL_BASE_M * w_radps;
-
-    // v_left, v_right 중 하나라도 모터가 감당가능한 속도를 넘을 시,
-    // 이를 scaling하는 로직 필요
-
-    ctrl.left.ref_rpm  = (v_left  / (2.0f * PI_F * WHEEL_RADIUS_M)) * 60.0f;
-    ctrl.right.ref_rpm = (v_right / (2.0f * PI_F * WHEEL_RADIUS_M)) * 60.0f;
+    ctrl.v_cmd_mps = v_mps;
+    ctrl.w_cmd_radps = w_radps;
 }
 
 
@@ -98,36 +110,70 @@ void Control_Update(void)
     float left_u_sat;
     float right_u_sat;
 
-    /* 1. 현재 rpm 측정 */
+    float max_dv;
+    float max_dw;
+
+    float v_left;
+    float v_right;
+
+    /* 1. v,w command ramp */
+    max_dv = CMD_V_ACCEL_MAX_MPS2 * CONTROL_TS_S;
+    max_dw = CMD_W_ACCEL_MAX_RADPS2 * CONTROL_TS_S;
+
+    ctrl.v_ref_mps = RampFloat(ctrl.v_ref_mps, ctrl.v_cmd_mps, max_dv);
+    ctrl.w_ref_radps = RampFloat(ctrl.w_ref_radps, ctrl.w_cmd_radps, max_dw);
+
+    /* 2. v,w -> wheel linear velocity */
+    v_left  = ctrl.v_ref_mps - 0.5f * WHEEL_BASE_M * ctrl.w_ref_radps;
+    v_right = ctrl.v_ref_mps + 0.5f * WHEEL_BASE_M * ctrl.w_ref_radps;
+
+    /* 3. wheel linear velocity -> wheel rpm */
+    ctrl.left.ref_rpm  = (v_left  / (2.0f * PI_F * WHEEL_RADIUS_M)) * 60.0f;
+    ctrl.right.ref_rpm = (v_right / (2.0f * PI_F * WHEEL_RADIUS_M)) * 60.0f;
+
+    /* 4. 정지 명령이면 integral 제거 */
+    if ((ctrl.left.ref_rpm > -CTRL_REF_ZERO_EPS_RPM) &&
+        (ctrl.left.ref_rpm <  CTRL_REF_ZERO_EPS_RPM))
+    {
+        ctrl.left.integral = 0.0f;
+    }
+
+    if ((ctrl.right.ref_rpm > -CTRL_REF_ZERO_EPS_RPM) &&
+        (ctrl.right.ref_rpm <  CTRL_REF_ZERO_EPS_RPM))
+    {
+        ctrl.right.integral = 0.0f;
+    }
+
+    /* 5. 현재 rpm 측정 */
     ctrl.left.meas_rpm  = Encoder_Left_GetRpm();
     ctrl.right.meas_rpm = Encoder_Right_GetRpm();
 
-    /* 2. 현재 error 계산 */
+    /* 6. 현재 error 계산 */
     ctrl.left.err  = ctrl.left.ref_rpm  - ctrl.left.meas_rpm;
     ctrl.right.err = ctrl.right.ref_rpm - ctrl.right.meas_rpm;
 
-    /* 3. P항 계산 */
+    /* 7. P항 계산 */
     left_p  = CTRL_KP * ctrl.left.err;
     right_p = CTRL_KP * ctrl.right.err;
 
-    /* 4. 적분 후보값 계산 */
+    /* 8. 적분 후보값 계산 */
     left_i_candidate  = ctrl.left.integral  + ctrl.left.err  * CONTROL_TS_S;
     right_i_candidate = ctrl.right.integral + ctrl.right.err * CONTROL_TS_S;
 
-    /* 5. 적분 후보값 제한 */
+    /* 9. 적분 후보값 제한 */
     left_i_candidate  = ClampFloat(left_i_candidate,  -CTRL_I_LIMIT, CTRL_I_LIMIT);
     right_i_candidate = ClampFloat(right_i_candidate, -CTRL_I_LIMIT, CTRL_I_LIMIT);
 
-    /* 6. 적분 후보값을 반영했을 때의 출력 계산 */
+    /* 10. 적분 후보값 기준 출력 계산 */
     left_u_unsat  = left_p  + CTRL_KI * left_i_candidate;
     right_u_unsat = right_p + CTRL_KI * right_i_candidate;
 
-    /* 7. 출력 saturation */
+    /* 11. 출력 saturation */
     left_u_sat  = ClampFloat(left_u_unsat,  -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
     right_u_sat = ClampFloat(right_u_unsat, -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
 
     /*
-     * 8. Conditional integration anti-windup
+     * 12. Conditional integration anti-windup
      *
      * 출력이 포화되지 않았으면 적분 반영.
      * +포화 상태에서 error가 음수이면 포화를 줄이는 방향이므로 적분 반영.
@@ -147,23 +193,26 @@ void Control_Update(void)
         ctrl.right.integral = right_i_candidate;
     }
 
-    /* 9. 최종 출력 재계산 */
+    /* 13. 최종 출력 재계산 */
     left_u_unsat  = left_p  + CTRL_KI * ctrl.left.integral;
     right_u_unsat = right_p + CTRL_KI * ctrl.right.integral;
 
     left_u_sat  = ClampFloat(left_u_unsat,  -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
     right_u_sat = ClampFloat(right_u_unsat, -MOTOR_PWM_MAX, MOTOR_PWM_MAX);
 
-    /* 10. 최종 명령 저장 */
+    /* 14. 최종 명령 저장 */
     ctrl.left.pwm_cmd  = (int16_t)left_u_sat;
     ctrl.right.pwm_cmd = (int16_t)right_u_sat;
 
-    /* 11. 모터 출력 */
+    /* 15. 모터 출력 */
     Motor_Both_SetCommand(ctrl.left.pwm_cmd, ctrl.right.pwm_cmd);
 }
 
 void Control_Stop(void)
 {
+    ctrl.v_cmd_mps   = 0.0f;
+    ctrl.w_cmd_radps = 0.0f;
+
     ctrl.v_ref_mps   = 0.0f;
     ctrl.w_ref_radps = 0.0f;
 
