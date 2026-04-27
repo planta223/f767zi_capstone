@@ -85,9 +85,6 @@ void Control_SetTargetRPM(float left_rpm, float right_rpm)
 
 void Control_SetTargetVW(float v_mps, float w_radps)
 {
-    float v_left;
-    float v_right;
-
     v_mps   = ClampFloat(v_mps,   -CMD_V_MAX_MPS,   CMD_V_MAX_MPS);
     w_radps = ClampFloat(w_radps, -CMD_W_MAX_RADPS, CMD_W_MAX_RADPS);
 
