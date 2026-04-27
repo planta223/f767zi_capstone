@@ -27,6 +27,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "config.h"
 #include "motor.h"
 #include "encoder.h"
 #include "stepper.h"
@@ -110,6 +111,15 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
+  /*
+   * IWDG reset 후 재부팅되면 빨간 LED가 켜짐.
+   */
+  if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
+  {
+      HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+  }
+  __HAL_RCC_CLEAR_RESET_FLAGS();
+
   Motor_Init();
   Encoder_Init();
   Odometry_Init();
@@ -119,8 +129,10 @@ int main(void)
   Failsafe_Init();
   Protocol_Init();
 
-  uint32_t prev_10ms = 0U;
-  uint32_t prev_50ms = 0U;
+  uint32_t init_ms = HAL_GetTick();
+  uint32_t prev_10ms = init_ms;
+  uint32_t prev_50ms = init_ms;
+  uint32_t last_iwdg_refresh_ms = init_ms;
 
   /* USER CODE END 2 */
 
@@ -162,6 +174,15 @@ int main(void)
               Odometry_GetV(),
               Odometry_GetW()
           );
+      }
+
+      /*
+       * IWDG_REFRESH_PERIOD_MS 마다 IWDG refresh
+       */
+      if ((now - last_iwdg_refresh_ms) >= IWDG_REFRESH_PERIOD_MS)
+      {
+          HAL_IWDG_Refresh(&hiwdg);
+          last_iwdg_refresh_ms = now;
       }
     /* USER CODE END WHILE */
 
