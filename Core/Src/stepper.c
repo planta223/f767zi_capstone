@@ -34,7 +34,7 @@ static volatile uint8_t dropoff_target_id = 0U;
 static uint16_t Stepper_AbsClampSteps(int32_t steps)
 {
     if (steps < 0) steps = -steps;
-    if (steps > STEPPER_STEPS_MAX)steps = STEPPER_STEPS_MAX;
+    if (steps > STEPPER_CMD_PULSES_MAX)steps = STEPPER_CMD_PULSES_MAX;
     return (uint16_t)steps;
 }
 
@@ -64,9 +64,9 @@ static int32_t Slider_IdxToSteps(uint8_t idx)
     switch (idx)
     {
         case 0U: return 0;
-        case 1U: return SLIDER_OFFSET_STEPS;
-        case 2U: return SLIDER_OFFSET_STEPS + SLIDER_GAP_STEPS;
-        case 3U: return SLIDER_OFFSET_STEPS + (2 * SLIDER_GAP_STEPS);
+        case 1U: return SLIDER_OFFSET_PULSES;
+        case 2U: return SLIDER_OFFSET_PULSES + SLIDER_GAP_PULSES;
+        case 3U: return SLIDER_OFFSET_PULSES + (2 * SLIDER_GAP_PULSES);
         default: return 0;
     }
 }
@@ -76,8 +76,8 @@ static int32_t Arm_IdxToSteps(uint8_t idx)
     switch (idx)
     {
         case 0U: return 0;                  // center
-        case 1U: return -ARM_SIDE_STEPS;    // left 70 deg
-        case 2U: return  ARM_SIDE_STEPS;    // right 70 deg
+        case 1U: return -ARM_SIDE_PULSES;    // left 70 deg
+        case 2U: return  ARM_SIDE_PULSES;    // right 70 deg
         default: return 0;
     }
 }
@@ -159,7 +159,7 @@ void Stepper_Update(void)
 
                     if (delta != 0)
                     {
-                        Stepper_Arm_SetCommand((int16_t)delta);
+                        Stepper_Arm_SetCommand(delta);
                         break;
                     }
                 }
@@ -172,7 +172,7 @@ void Stepper_Update(void)
             {
                 homing_slider_started = 1U;
 
-                Stepper_Slider_SetCommand(STEPPER_HOMING_SLIDER_STEPS);
+                Stepper_Slider_SetCommand(SLIDER_HOMING_PULSES);
                 break;
             }
 
@@ -200,7 +200,7 @@ void Stepper_Update(void)
                 delta = Slider_CalcDelta();
                 if (delta != 0)
                 {
-                    Stepper_Slider_SetCommand((int16_t)delta);
+                    Stepper_Slider_SetCommand(delta);
                 }
 
                 stepper_state = STEPPER_SLIDER_TO_TARGET;
@@ -221,7 +221,7 @@ void Stepper_Update(void)
                 delta = Arm_CalcDelta();
                 if (delta != 0)
                 {
-                    Stepper_Arm_SetCommand((int16_t)delta);
+                    Stepper_Arm_SetCommand(delta);
                 }
 
                 stepper_state = STEPPER_ARM_TO_TARGET;
@@ -238,7 +238,7 @@ void Stepper_Update(void)
 
                 if (delta != 0)
                 {
-                    Stepper_Arm_SetCommand((int16_t)delta);
+                    Stepper_Arm_SetCommand(delta);
                     stepper_state = STEPPER_ARM_TO_INIT_POST;
                 }
                 else
@@ -327,7 +327,7 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     // 1. 먼저 arm 중앙 복귀
     if (delta != 0)
     {
-        Stepper_Arm_SetCommand((int16_t)delta);
+        Stepper_Arm_SetCommand(delta);
         stepper_state = STEPPER_ARM_TO_INIT_PRE;
     }
     // 2. 그다음 slider를 목표 위치로 이동 -> arm 목표 위치로 이동 -> arm 중앙 복귀 -> 동작 완료
@@ -338,7 +338,7 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
         delta = Slider_CalcDelta();
         if (delta != 0)
         {
-            Stepper_Slider_SetCommand((int16_t)delta);
+            Stepper_Slider_SetCommand(delta);
         }
 
         stepper_state = STEPPER_SLIDER_TO_TARGET;
@@ -360,7 +360,7 @@ uint8_t Stepper_GetAndClearDropoffDone(void)
     return ret;
 }
 
-void Stepper_Slider_SetCommand(int16_t cmd)
+void Stepper_Slider_SetCommand(int32_t cmd)
 {
     uint16_t steps = Stepper_AbsClampSteps(cmd);
 
@@ -382,12 +382,12 @@ void Stepper_Slider_SetCommand(int16_t cmd)
     slider_busy = 1U;
 
     __HAL_TIM_SET_COUNTER(&htim5, 0U);
-    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, STEPPER_PULSE_DUTY);
+    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, SLIDER_PULSE_DUTY);
 
     HAL_TIM_Base_Start_IT(&htim5); // 인터럽트 시작
 }
 
-void Stepper_Arm_SetCommand(int16_t cmd)
+void Stepper_Arm_SetCommand(int32_t cmd)
 {
     uint16_t steps = Stepper_AbsClampSteps(cmd);
 
@@ -409,7 +409,7 @@ void Stepper_Arm_SetCommand(int16_t cmd)
     arm_busy = 1U;
 
     __HAL_TIM_SET_COUNTER(&htim8, 0U);
-    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, STEPPER_PULSE_DUTY);
+    __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, ARM_PULSE_DUTY);
 
     HAL_TIM_Base_Start_IT(&htim8); // 인터럽트 시작
 }

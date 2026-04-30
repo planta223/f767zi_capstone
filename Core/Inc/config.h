@@ -73,15 +73,74 @@
 /* =========================================
  * stepper.c
  * ========================================= */
-#define STEPPER_STEPS_MAX     1000 // 예시값
-#define STEPPER_PULSE_DUTY    500
 
-#define STEPPER_HOMING_SLIDER_STEPS -10000
+#define SLIDER_PULSE_DUTY     500U     // TIM5 ARR = 999, 50%
+#define ARM_PULSE_DUTY        5000U    // TIM8 ARR = 9999, 50%
 
-#define SLIDER_OFFSET_STEPS   1000 // 예시값
-#define SLIDER_GAP_STEPS      800 // 예시값
+/* -----------------------------------------
+ * Slider hardware
+ * - Sliding table : SFU1605
+ * - Lead          : 5 mm/rev
+ * - Stroke        : 600 mm
+ * - Driver        : DM556
+ * - Microstep     : 400 pulse/rev
+ * ----------------------------------------- */
+#define SLIDER_LEAD_MM_PER_REV          5U
+#define SLIDER_DRIVER_PULSES_PER_REV    400U
+#define SLIDER_STROKE_MM                600U
 
-#define ARM_SIDE_STEPS        500 // 예시값
+#define SLIDER_PULSES_PER_MM            \
+    (SLIDER_DRIVER_PULSES_PER_REV / SLIDER_LEAD_MM_PER_REV)
+
+#define SLIDER_STROKE_PULSES            \
+    (SLIDER_STROKE_MM * SLIDER_PULSES_PER_MM)
+
+/*
+ * idx 1 = OFFSET
+ * idx 2 = OFFSET + GAP
+ * idx 3 = OFFSET + 2*GAP
+ */
+#define SLIDER_OFFSET_MM                0U
+#define SLIDER_GAP_MM                   247U
+
+#define SLIDER_OFFSET_PULSES            \
+    (SLIDER_OFFSET_MM * SLIDER_PULSES_PER_MM)
+
+#define SLIDER_GAP_PULSES               \
+    (SLIDER_GAP_MM * SLIDER_PULSES_PER_MM)
+
+#define SLIDER_MAX_TARGET_MM            \
+    (SLIDER_OFFSET_MM + (2U * SLIDER_GAP_MM))
+
+#define SLIDER_MAX_TARGET_PULSES        \
+    (SLIDER_MAX_TARGET_MM * SLIDER_PULSES_PER_MM)
+
+/*
+ * Current target max:
+ * 494 mm * 80 pulse/mm = 39520 pulse
+ * 41000 pulse gives small safety margin.
+ */
+#define STEPPER_CMD_PULSES_MAX          41000U
+
+/*
+ * Initial homing test:
+ * -2000 pulse / 80 pulse/mm = -25 mm
+ */
+#define SLIDER_HOMING_PULSES            (-2000)
+
+
+/* -----------------------------------------
+ * Arm hardware
+ * - Driver    : TB6600
+ * - Current   : 3.0 A
+ * - Microstep : 4 microstep = 800 pulse/rev
+ * - Target    : 70 deg
+ * ----------------------------------------- */
+#define ARM_DRIVER_PULSES_PER_REV       800U
+#define ARM_SIDE_ANGLE_DEG              70U
+
+#define ARM_SIDE_PULSES                 \
+    ((ARM_DRIVER_PULSES_PER_REV * ARM_SIDE_ANGLE_DEG) / 360U)
 
 /* =========================================
  * failsafe.c

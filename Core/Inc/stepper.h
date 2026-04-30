@@ -30,8 +30,8 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id);
 uint8_t Stepper_IsBusy(void);
 uint8_t Stepper_GetAndClearDropoffDone(void);
 
-void Stepper_Slider_SetCommand(int16_t cmd);
-void Stepper_Arm_SetCommand(int16_t cmd);
+void Stepper_Slider_SetCommand(int32_t cmd);
+void Stepper_Arm_SetCommand(int32_t cmd);
 void Stepper_StopAll(void);
 void Stepper_EmergencyStop(void);
 
