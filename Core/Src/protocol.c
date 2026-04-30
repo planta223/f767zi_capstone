@@ -441,13 +441,19 @@ void Protocol_Process(void)
         case MSG_TYPE_DROPOFF_START:
             if (Failsafe_IsHeartbeatTimeout() == 1U)
             {
-                break;   // timeout 상태에서는 dropoff도 무시
+                break;   // timeout 상태에서는 dropoff 무시
             }
 
         	target_id = rx_frame[3];
 
             Control_Stop();
-            Stepper_Dropoff_Start(target_id);
+
+            // Dropoff 상태머신 시작 성공하면 LD1[Green] ON
+			if (Stepper_Dropoff_Start(target_id) == 1U)
+			{
+			    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+			}
+
         	break;
 
         case MSG_TYPE_HEARTBEAT:

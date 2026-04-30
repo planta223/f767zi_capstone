@@ -146,9 +146,11 @@ int main(void)
       Stepper_Update();
       Failsafe_Update(now); // Timeout 확인
 
+      // Dropoff 종료 확인
       if (Stepper_GetAndClearDropoffDone() == 1U)
       {
           Protocol_SendDropoffDone();
+          HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
       }
 
       /* 10 ms 주기 제어 */

@@ -6,6 +6,8 @@
  */
 
 
+#include "gpio.h"
+
 #include "config.h"
 
 #include "control.h"
@@ -19,6 +21,7 @@
 /* last_heartbeat_ms  : 마지막 heartbeat 수신 시각
  * heartbeat_timeout  : heartbeat timeout 상태 플래그
  * stop_latched       : timeout 시 정지 동작 수행 여부 플래그
+ *
  */
 static uint32_t last_heartbeat_ms = 0U;
 static uint8_t  heartbeat_timeout = 1U;
@@ -33,6 +36,8 @@ void Failsafe_Init(void)
     last_heartbeat_ms = 0U;
     heartbeat_timeout = 1U; // 초기 상태는 timeout 상태로 간주
     stop_latched = 0U;
+
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 }
 
 
@@ -68,11 +73,18 @@ void Failsafe_Update(uint32_t now_ms)
 
     if (heartbeat_timeout == 1U)
     {
+        HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+
         if (stop_latched == 0U)
         {
             Control_Stop();
             Stepper_StopAll();
+            HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
             stop_latched = 1U;
         }
+    }
+    else
+    {
+        HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
     }
 }

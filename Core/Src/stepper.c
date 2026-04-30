@@ -185,6 +185,7 @@ void Stepper_Update(void)
                 stepper_state = STEPPER_IDLE;
             }
             break;
+
         case STEPPER_ARM_TO_INIT_PRE:
             if (arm_busy == 0U)
             {
@@ -264,11 +265,13 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
 {
     int32_t delta;
 
+    // Dropoff 동작은 STEPPER_IDLE 상태일때만 진행
     if (stepper_state != STEPPER_IDLE)
     {
         return 0U;
     }
 
+    // target_id 유효성 판단
     if (Stepper_TargetIdToIdx(target_id) == 0U)
     {
         return 0U;
@@ -280,11 +283,13 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     arm_target_idx = 0U;
     delta = Arm_CalcDelta();
 
+    // 1. 먼저 arm 중앙 복귀
     if (delta != 0)
     {
         Stepper_Arm_SetCommand((int16_t)delta);
         stepper_state = STEPPER_ARM_TO_INIT_PRE;
     }
+    // 2. 그다음 slider를 목표 위치로 이동 -> arm 목표 위치로 이동 -> arm 중앙 복귀 -> 동작 완료
     else
     {
         arm_curr_idx = 0U;
