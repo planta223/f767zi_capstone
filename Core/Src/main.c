@@ -112,7 +112,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   /*
-   * IWDG reset 후 재부팅되면 빨간 LED가 켜짐.
+   * IWDG reset 후 재부팅되면 LD3[Red] ON
    */
   if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
   {
@@ -132,7 +132,7 @@ int main(void)
   uint32_t init_ms = HAL_GetTick();
   uint32_t prev_10ms = init_ms;
   uint32_t prev_50ms = init_ms;
-  uint32_t last_iwdg_refresh_ms = init_ms;
+  uint32_t prev_iwdg_refresh_ms = init_ms;
 
   /* USER CODE END 2 */
 
@@ -179,10 +179,10 @@ int main(void)
       /*
        * IWDG_REFRESH_PERIOD_MS 마다 IWDG refresh
        */
-      if ((now - last_iwdg_refresh_ms) >= IWDG_REFRESH_PERIOD_MS)
+      if ((now - prev_iwdg_refresh_ms) >= IWDG_REFRESH_PERIOD_MS)
       {
           HAL_IWDG_Refresh(&hiwdg);
-          last_iwdg_refresh_ms = now;
+          prev_iwdg_refresh_ms = now;
       }
     /* USER CODE END WHILE */
 
