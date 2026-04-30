@@ -142,9 +142,9 @@ int main(void)
   {
       uint32_t now = HAL_GetTick();
 
+      Failsafe_Update(now); // Timeout 확인
       Protocol_Process();   // UART 수신 명령 처리
       Stepper_Update();
-      Failsafe_Update(now); // Timeout 확인
 
       // Dropoff 종료 확인
       if (Stepper_GetAndClearDropoffDone() == 1U)
