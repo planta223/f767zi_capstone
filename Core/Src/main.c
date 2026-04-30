@@ -35,7 +35,7 @@
 #include "odometry.h"
 #include "control.h"
 #include "timebase.h"
-#include "failsafe.h"
+#include "heartbeat.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,7 +87,7 @@ static void App_UserButton_Update(uint32_t now_ms)
         btn_last_ms = now_ms;
 
         // heartbeat 정상일 때만 homing 허용.
-        if (Failsafe_IsHeartbeatTimeout() == 0U)
+        if (Heartbeat_IsTimeout() == 0U)
         {
         	Control_Stop();
             Stepper_StartHoming();
@@ -154,7 +154,7 @@ int main(void)
   Control_Init();
   Timebase_Init();
   Stepper_Init();
-  Failsafe_Init();
+  Heartbeat_Init();
   Protocol_Init();
 
   uint32_t init_ms = HAL_GetTick();
@@ -170,7 +170,7 @@ int main(void)
   {
       uint32_t now = HAL_GetTick();
 
-      Failsafe_Update(now); // Timeout 확인
+      Heartbeat_Update(now); // Timeout 확인
       Protocol_Process();   // UART 수신 명령 처리
 
       App_UserButton_Update(now);

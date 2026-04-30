@@ -10,8 +10,8 @@
 #include "config.h"
 
 #include "control.h"
-#include "failsafe.h"
 #include "stepper.h"
+#include "heartbeat.h"
 
 #include <string.h>
 
@@ -423,7 +423,7 @@ void Protocol_Process(void)
     switch (msg_type)
     {
         case MSG_TYPE_VW:
-            if (Failsafe_IsHeartbeatTimeout() == 1U)
+            if (Heartbeat_IsTimeout() == 1U)
             {
                 break;   // timeout 상태에서는 주행명령 무시
             }
@@ -439,7 +439,7 @@ void Protocol_Process(void)
             break;
 
         case MSG_TYPE_DROPOFF_START:
-            if (Failsafe_IsHeartbeatTimeout() == 1U)
+            if (Heartbeat_IsTimeout() == 1U)
             {
                 break;   // timeout 상태에서는 dropoff 무시
             }
@@ -466,7 +466,7 @@ void Protocol_Process(void)
         	break;
 
         case MSG_TYPE_HEARTBEAT:
-        	Failsafe_NotifyHeartbeat(HAL_GetTick());
+        	Heartbeat_Notify(HAL_GetTick());
             break;
 
         default:

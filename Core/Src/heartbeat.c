@@ -1,18 +1,18 @@
 /*
- * failsafe.c
+ * heartbeat.c
  *
  *  Created on: Apr 16, 2026
  *      Author: kyubeom
  */
 
 
+#include "heartbeat.h"
 #include "gpio.h"
 
 #include "config.h"
 
 #include "control.h"
 #include "stepper.h"
-#include "failsafe.h"
 
 
 /* =========================================
@@ -31,7 +31,7 @@ static uint8_t  stop_latched = 0U;
 /* =========================================
  * 모든 x.c 파일에는 X_Init(); 함수가 존재해야 한다.
  * ========================================= */
-void Failsafe_Init(void)
+void Heartbeat_Init(void)
 {
     last_heartbeat_ms = 0U;
     heartbeat_timeout = 1U; // 초기 상태는 timeout 상태로 간주
@@ -44,19 +44,19 @@ void Failsafe_Init(void)
 /* =========================================
  * global 함수
  * ========================================= */
-void Failsafe_NotifyHeartbeat(uint32_t now_ms)
+void Heartbeat_Notify(uint32_t now_ms)
 {
     last_heartbeat_ms = now_ms;
     heartbeat_timeout = 0U;
     stop_latched = 0U;
 }
 
-uint8_t Failsafe_IsHeartbeatTimeout(void)
+uint8_t Heartbeat_IsTimeout(void)
 {
     return heartbeat_timeout;
 }
 
-void Failsafe_Update(uint32_t now_ms)
+void Heartbeat_Update(uint32_t now_ms)
 {
 	// 아직 heartbeat를 한 번도 받은 적 없으면 timeout
     if (last_heartbeat_ms == 0U)
