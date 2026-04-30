@@ -70,16 +70,17 @@ void SystemClock_Config(void);
 
 static void App_UserButton_Update(uint32_t now_ms)
 {
+    /*
+     * 버튼 눌림	: GPIO_PIN_SET
+     * 버튼 안눌림 : GPIO_PIN_RESET
+     */
+
     static uint8_t btn_prev = GPIO_PIN_RESET;
     static uint32_t btn_last_ms = 0U;
 
     uint8_t btn_now = HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin);
 
-    /*
-     * 버튼 눌림	: GPIO_PIN_SET
-     * 버튼 안눌림 : GPIO_PIN_RESET
-     * 만약 반대로 동작하면 SET/RESET 조건을 뒤집을 것.
-     */
+
     if ((btn_prev == GPIO_PIN_RESET) &&
         (btn_now == GPIO_PIN_SET) &&
         ((now_ms - btn_last_ms) > 200U))
