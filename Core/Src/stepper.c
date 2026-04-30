@@ -218,6 +218,9 @@ void Stepper_Update(void)
                     break;
                 }
 
+                /* slider 이동 완료 후, dropoff target 기준 arm 목표 재설정 */
+                arm_target_idx = ((dropoff_target_id - 1U) % 2U + 1U);
+
                 delta = Arm_CalcDelta();
                 if (delta != 0)
                 {
@@ -371,11 +374,11 @@ void Stepper_Slider_SetCommand(int32_t cmd)
 
     if (cmd > 0)
     {
-        HAL_GPIO_WritePin(slider_DIR_GPIO_Port, slider_DIR_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(slider_DIR_GPIO_Port, slider_DIR_Pin, GPIO_PIN_SET);
     }
     else
     {
-        HAL_GPIO_WritePin(slider_DIR_GPIO_Port, slider_DIR_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(slider_DIR_GPIO_Port, slider_DIR_Pin, GPIO_PIN_RESET);
     }
 
     slider_steps_remain = steps;
@@ -398,11 +401,11 @@ void Stepper_Arm_SetCommand(int32_t cmd)
 
     if (cmd > 0)
     {
-        HAL_GPIO_WritePin(arm_DIR_GPIO_Port, arm_DIR_Pin, GPIO_PIN_RESET);
+        HAL_GPIO_WritePin(arm_DIR_GPIO_Port, arm_DIR_Pin, GPIO_PIN_SET);
     }
     else
     {
-        HAL_GPIO_WritePin(arm_DIR_GPIO_Port, arm_DIR_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(arm_DIR_GPIO_Port, arm_DIR_Pin, GPIO_PIN_RESET);
     }
 
     arm_steps_remain = steps;
