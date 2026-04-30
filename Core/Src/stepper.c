@@ -24,8 +24,10 @@ static volatile uint8_t arm_curr_idx         = 0U;
 static volatile uint8_t slider_target_idx    = 0U; // 0,1,2,3
 static volatile uint8_t arm_target_idx       = 0U; // 0,1,2
 
-static volatile uint8_t startup_started = 0U;
-static volatile uint8_t startup_slider_started = 0U;
+static volatile uint8_t homing_started = 0U;
+static volatile uint8_t homing_slider_started = 0U;
+static volatile uint8_t homing_done = 0U;
+
 static volatile uint8_t dropoff_done_latched = 0U;
 static volatile uint8_t dropoff_target_id = 0U;
 
@@ -122,12 +124,14 @@ void Stepper_Init(void)
     slider_busy = 0U;
     arm_busy    = 0U;
 
-    startup_started        = 0U;
-    startup_slider_started = 0U;
+    homing_started        = 0U;
+    homing_slider_started = 0U;
+    homing_done 		  = 0U;
 
     dropoff_done_latched = 0U;
+    dropoff_target_id    = 0U;
 
-    stepper_state = STEPPER_STARTUP;
+    stepper_state = STEPPER_IDLE;   // 부팅 직후 자동 homing 금지
 }
 
 /* =========================================
@@ -142,11 +146,11 @@ void Stepper_Update(void)
         case STEPPER_IDLE:
             break;
 
-        case STEPPER_STARTUP:
+        case STEPPER_HOMING:
             /* arm init 시작 전 */
-            if (startup_started == 0U)
+            if (homing_started == 0U)
             {
-                startup_started = 1U;
+                homing_started = 1U;
 
                 if (arm_curr_idx != 0U)
                 {
@@ -164,24 +168,26 @@ void Stepper_Update(void)
             }
 
             /* arm init 완료 후 slider init 시작 */
-            if ((arm_busy == 0U) && (startup_slider_started == 0U))
+            if ((arm_busy == 0U) && (homing_slider_started == 0U))
             {
-                startup_slider_started = 1U;
+                homing_slider_started = 1U;
 
-                Stepper_Slider_SetCommand(-STEPPER_STARTUP_SLIDER_HOMING_STEPS);
+                Stepper_Slider_SetCommand(STEPPER_HOMING_SLIDER_STEPS);
                 break;
             }
 
             /* slider init 완료 */
-            if ((startup_slider_started == 1U) && (slider_busy == 0U))
+            if ((homing_slider_started == 1U) && (slider_busy == 0U))
             {
                 slider_curr_idx   = 0U;
                 slider_target_idx = 0U;
                 arm_curr_idx      = 0U;
                 arm_target_idx    = 0U;
 
-                startup_started = 0U;
-                startup_slider_started = 0U;
+                homing_started = 0U;
+                homing_slider_started = 0U;
+                homing_done = 1U;
+
                 stepper_state = STEPPER_IDLE;
             }
             break;
@@ -261,12 +267,47 @@ void Stepper_Update(void)
     }
 }
 
+uint8_t Stepper_StartHoming(void)
+{
+    if (stepper_state != STEPPER_IDLE)
+    {
+        return 0U;
+    }
+
+    /*
+     * 이미 homing 완료 상태이면 반복 homing 금지.
+     * heartbeat emergency stop 등으로 homing_done이 0이 된 경우에만 다시 허용.
+     */
+    if (homing_done == 1U)
+    {
+        return 0U;
+    }
+
+    homing_done = 0U;
+
+    homing_started = 0U;
+    homing_slider_started = 0U;
+
+    dropoff_done_latched = 0U;
+    dropoff_target_id = 0U;
+
+    stepper_state = STEPPER_HOMING;
+
+    return 1U;
+}
+
 uint8_t Stepper_Dropoff_Start(uint8_t target_id)
 {
     int32_t delta;
 
     // Dropoff 동작은 STEPPER_IDLE 상태일때만 진행
     if (stepper_state != STEPPER_IDLE)
+    {
+        return 0U;
+    }
+
+    // homing 미완료 상태일때는 dropoff 동작 금지
+    if (homing_done == 0U)
     {
         return 0U;
     }
@@ -306,7 +347,7 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     return 1U;
 }
 
-// startup 중이든, dropoff 중이든, arm post-init 중이든 다 busy로 봅니다.
+// homing 중이든, dropoff 중이든, arm post-init 중이든 다 busy로 봅니다.
 uint8_t Stepper_IsBusy(void)
 {
     return (uint8_t)(stepper_state != STEPPER_IDLE);
@@ -385,13 +426,19 @@ void Stepper_StopAll(void)
     slider_busy = 0U;
     arm_busy    = 0U;
 
-    startup_started        = 0U;
-    startup_slider_started = 0U;
+    homing_started        = 0U;
+    homing_slider_started = 0U;
 
     stepper_state = STEPPER_IDLE;
 
     dropoff_done_latched = 0U;
     dropoff_target_id    = 0U;
+}
+
+void Stepper_EmergencyStop(void)
+{
+    Stepper_StopAll();
+    homing_done = 0U;
 }
 
 void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)

@@ -68,6 +68,36 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
+static void App_UserButton_Update(uint32_t now_ms)
+{
+    static uint8_t btn_prev = GPIO_PIN_RESET;
+    static uint32_t btn_last_ms = 0U;
+
+    uint8_t btn_now = HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin);
+
+    /*
+     * 버튼 눌림	: GPIO_PIN_SET
+     * 버튼 안눌림 : GPIO_PIN_RESET
+     * 만약 반대로 동작하면 SET/RESET 조건을 뒤집을 것.
+     */
+    if ((btn_prev == GPIO_PIN_RESET) &&
+        (btn_now == GPIO_PIN_SET) &&
+        ((now_ms - btn_last_ms) > 200U))
+    {
+        btn_last_ms = now_ms;
+
+        // heartbeat 정상일 때만 homing 허용.
+        if (Failsafe_IsHeartbeatTimeout() == 0U)
+        {
+        	Control_Stop();
+            Stepper_StartHoming();
+        }
+    }
+
+    btn_prev = btn_now;
+}
+
+
 /* USER CODE END 0 */
 
 /**
@@ -111,9 +141,7 @@ int main(void)
   MX_IWDG_Init();
   /* USER CODE BEGIN 2 */
 
-  /*
-   * IWDG reset 후 재부팅되면 LD3[Red] ON
-   */
+  /* LD3[Red] : IWDG reset 후 재부팅 */
   if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != RESET)
   {
       HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
@@ -144,12 +172,18 @@ int main(void)
 
       Failsafe_Update(now); // Timeout 확인
       Protocol_Process();   // UART 수신 명령 처리
+
+      App_UserButton_Update(now);
+
       Stepper_Update();
 
-      // Dropoff 종료 확인
-      if (Stepper_GetAndClearDropoffDone() == 1U)
+      /* LD1[Green] : stepper busy 표시 */
+      if (Stepper_IsBusy() == 1U)
       {
-          Protocol_SendDropoffDone();
+          HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+      }
+      else
+      {
           HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
       }
 

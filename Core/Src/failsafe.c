@@ -58,14 +58,17 @@ uint8_t Failsafe_IsHeartbeatTimeout(void)
 
 void Failsafe_Update(uint32_t now_ms)
 {
+	// 아직 heartbeat를 한 번도 받은 적 없으면 timeout
     if (last_heartbeat_ms == 0U)
     {
         heartbeat_timeout = 1U;
     }
+    // 마지막 heartbeat 이후 제한 시간 초과하면 timeout
     else if ((now_ms - last_heartbeat_ms) > HEARTBEAT_TIMEOUT_MS)
     {
         heartbeat_timeout = 1U;
     }
+    // 최근 heartbeat 수신되면 정상
     else
     {
         heartbeat_timeout = 0U;
@@ -73,18 +76,20 @@ void Failsafe_Update(uint32_t now_ms)
 
     if (heartbeat_timeout == 1U)
     {
+    	// timeout인 경우 LD2[Blue] OFF
         HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
 
         if (stop_latched == 0U)
         {
             Control_Stop();
-            Stepper_StopAll();
-            HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+            Stepper_EmergencyStop();
+
             stop_latched = 1U;
         }
     }
     else
     {
         HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+        stop_latched = 0U;
     }
 }

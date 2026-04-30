@@ -446,12 +446,21 @@ void Protocol_Process(void)
 
         	target_id = rx_frame[3];
 
+            /*
+             * Dropoff 명령을 받은 순간 주행은 정지.
+             * Dropoff 시작 실패 여부와 무관하게 정지 상태를 유지한다.
+             */
             Control_Stop();
 
-            // Dropoff 상태머신 시작 성공하면 LD1[Green] ON
-			if (Stepper_Dropoff_Start(target_id) == 1U)
+			if (Stepper_Dropoff_Start(target_id) == 0U)
 			{
-			    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+		        /*
+		         * 현재는 실패 응답 frame이 없으므로 추가 동작 없음.
+		         * 실패 원인 예:
+		         * - stepper busy
+		         * - invalid target_id
+		         * - homing 미완료 상태
+		         */
 			}
 
         	break;
