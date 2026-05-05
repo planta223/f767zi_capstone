@@ -133,7 +133,7 @@
  * Arm hardware
  * - Driver    : DM556
  * - Motor     : 57HS5630A4, 1.2 Nm, 3 A/phase
- * - Current   : 2.7 A start, 3.2 A if torque is insufficient
+ * - Current   : 3.2 A (2.7A torque was insufficient by our test.)
  * - Microstep : 3200 pulse/rev
  * - Target    : 70 deg
  * ----------------------------------------- */
