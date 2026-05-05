@@ -128,7 +128,7 @@ void Stepper_Init(void)
 
     homing_started        = 0U;
     homing_slider_started = 0U;
-    homing_done 		  = 0U;
+    homing_done 		  = 1U; // 임시 arm 단독 테스트용
 
     dropoff_done_latched = 0U;
     dropoff_target_id    = 0U;
@@ -467,7 +467,7 @@ void Stepper_StopAll(void)
 void Stepper_EmergencyStop(void)
 {
     Stepper_StopAll();
-    homing_done = 0U;
+    homing_done = 1U;
 }
 
 void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
