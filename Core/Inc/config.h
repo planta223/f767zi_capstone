@@ -136,7 +136,7 @@
  * - Microstep : 4 microstep = 800 pulse/rev
  * - Target    : 70 deg
  * ----------------------------------------- */
-#define ARM_DRIVER_PULSES_PER_REV       800U
+#define ARM_DRIVER_PULSES_PER_REV       800U // 현재 4 microstep
 #define ARM_SIDE_ANGLE_DEG              70U
 
 #define ARM_SIDE_PULSES                 \
