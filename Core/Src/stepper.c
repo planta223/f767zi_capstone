@@ -31,6 +31,8 @@ static volatile uint8_t homing_done = 0U;
 static volatile uint8_t dropoff_done_latched = 0U;
 static volatile uint8_t dropoff_target_id = 0U;
 
+static volatile uint32_t arm_hold_start_ms = 0U;
+
 static uint16_t Stepper_AbsClampSteps(int32_t steps)
 {
     if (steps < 0) steps = -steps;
@@ -126,10 +128,12 @@ void Stepper_Init(void)
 
     homing_started        = 0U;
     homing_slider_started = 0U;
-    homing_done 		  = 0U;
+    homing_done 		  = 1U; // 임시 arm 단독 테스트용
 
     dropoff_done_latched = 0U;
     dropoff_target_id    = 0U;
+
+    arm_hold_start_ms = 0U;
 
     stepper_state = STEPPER_IDLE;   // 부팅 직후 자동 homing 금지
 }
@@ -218,16 +222,23 @@ void Stepper_Update(void)
                     break;
                 }
 
-                /* slider 이동 완료 후, dropoff target 기준 arm 목표 재설정 */
+                /*
+                 * slider 이동 완료 후, dropoff target 기준 arm 목표 재설정
+                 * Dropoff_Start()에서 arm_target_idx를 0으로 덮었기 때문에 여기서 복구해야 함.
+                 */
                 arm_target_idx = ((dropoff_target_id - 1U) % 2U + 1U);
 
                 delta = Arm_CalcDelta();
+
                 if (delta != 0)
                 {
                     Stepper_Arm_SetCommand(delta);
+                    stepper_state = STEPPER_ARM_TO_TARGET;
                 }
-
-                stepper_state = STEPPER_ARM_TO_TARGET;
+                else
+                {
+                    stepper_state = STEPPER_DONE;
+                }
             }
             break;
 
@@ -236,6 +247,18 @@ void Stepper_Update(void)
             {
                 arm_curr_idx = arm_target_idx;
 
+                /*
+                 * arm이 목표 하역 위치(+/-70 deg)에 도달한 뒤
+                 * 바로 center 복귀하지 않고 일정 시간 유지한다.
+                 */
+                arm_hold_start_ms = HAL_GetTick();
+                stepper_state = STEPPER_ARM_HOLD_AT_TARGET;
+            }
+            break;
+
+        case STEPPER_ARM_HOLD_AT_TARGET:
+            if ((HAL_GetTick() - arm_hold_start_ms) >= ARM_DROPOFF_HOLD_MS)
+            {
                 arm_target_idx = 0U;
                 delta = Arm_CalcDelta();
 
@@ -323,6 +346,7 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
 
     dropoff_target_id = target_id;
     dropoff_done_latched = 0U;
+    arm_hold_start_ms = 0U;
 
     arm_target_idx = 0U;
     delta = Arm_CalcDelta();
@@ -436,12 +460,14 @@ void Stepper_StopAll(void)
 
     dropoff_done_latched = 0U;
     dropoff_target_id    = 0U;
+
+    arm_hold_start_ms = 0U;
 }
 
 void Stepper_EmergencyStop(void)
 {
     Stepper_StopAll();
-    homing_done = 0U;
+    homing_done = 1U;
 }
 
 void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
