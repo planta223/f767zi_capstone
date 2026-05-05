@@ -79,11 +79,11 @@
 
 /* -----------------------------------------
  * Slider hardware
- * - Sliding table : SFU1605
- * - Lead          : 5 mm/rev
- * - Stroke        : 600 mm
- * - Driver        : DM556
- * - Microstep     : 400 pulse/rev
+ * - Driver    : DM556
+ * - Motor     : 57HS11230A4, 3 Nm, 3 A/phase
+ * - Current   : 2.7 A start, 3.2 A if torque is insufficient
+ * - Microstep : 400 pulse/rev
+ * - Table     : SFU1605, 5 mm/rev lead, 600 mm stroke
  * ----------------------------------------- */
 #define SLIDER_LEAD_MM_PER_REV          5U
 #define SLIDER_DRIVER_PULSES_PER_REV    400U
@@ -131,12 +131,13 @@
 
 /* -----------------------------------------
  * Arm hardware
- * - Driver    : TB6600
- * - Current   : 3.0 A
- * - Microstep : 16 microstep = 3200 pulse/rev
+ * - Driver    : DM556
+ * - Motor     : 57HS5630A4, 1.2 Nm, 3 A/phase
+ * - Current   : 2.7 A start, 3.2 A if torque is insufficient
+ * - Microstep : 3200 pulse/rev
  * - Target    : 70 deg
  * ----------------------------------------- */
-#define ARM_DRIVER_PULSES_PER_REV       800U // 현재 dm556 800pulse/rev
+#define ARM_DRIVER_PULSES_PER_REV       3200U
 #define ARM_SIDE_ANGLE_DEG              70U
 #define ARM_DROPOFF_HOLD_MS             1000U
 
