@@ -71,7 +71,7 @@ void SystemClock_Config(void);
 static void App_UserButton_Update(uint32_t now_ms)
 {
     /*
-     * 버튼 눌림	: GPIO_PIN_SET
+     * 버튼 눌림    : GPIO_PIN_SET
      * 버튼 안눌림 : GPIO_PIN_RESET
      */
 
@@ -80,18 +80,21 @@ static void App_UserButton_Update(uint32_t now_ms)
 
     uint8_t btn_now = HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin);
 
-
     if ((btn_prev == GPIO_PIN_RESET) &&
         (btn_now == GPIO_PIN_SET) &&
         ((now_ms - btn_last_ms) > 200U))
     {
         btn_last_ms = now_ms;
 
-        // heartbeat 정상일 때만 homing 허용.
+        /*
+         * 임시 slider 수동 후진:
+         * 버튼 1회 누를 때마다 SLIDER_BACK_PULSES 이동
+         */
+        Control_Stop();
+
         if (Heartbeat_IsTimeout() == 0U)
         {
-        	Control_Stop();
-            Stepper_StartHoming();
+            Stepper_Slider_SetCommand(SLIDER_HOMING_PULSES);
         }
     }
 
@@ -174,7 +177,7 @@ int main(void)
       Heartbeat_Update(now); // Timeout 확인
       Protocol_Process();   // UART 수신 명령 처리
 
-      // App_UserButton_Update(now); // slider test 중 버튼 비활성화
+      App_UserButton_Update(now); // slider test 중 버튼 비활성화
 
       Stepper_Update();
 
