@@ -36,6 +36,7 @@
 #include "control.h"
 #include "timebase.h"
 #include "heartbeat.h"
+#include "estop.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -98,12 +99,12 @@ static void App_UserButton_Update(uint32_t now_ms)
             /*
              * 버튼 press:
              * - 주행 정지
-             * - heartbeat 정상일 때만 slider 수동 후진 시작
+             * - heartbeat 정상이고 ESTOP 아닐 때만 slider 수동 후진 시작
              * - stepper busy이면 Stepper_SliderJogStart() 내부에서 거부
              */
             Control_Stop();
 
-            if (Heartbeat_IsTimeout() == 0U)
+            if ((Heartbeat_IsTimeout() == 0U) && (EStop_IsActive() == 0U))
             {
                 Stepper_SliderJogStart(-1);
             }
@@ -122,6 +123,28 @@ static void App_UserButton_Update(uint32_t now_ms)
     }
 }
 
+static void App_LED_Update(void)
+{
+    if (EStop_IsActive() == 1U)
+    {
+        HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+        HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_SET);
+        return;
+    }
+
+    /* LD1[Green] : stepper busy */
+    HAL_GPIO_WritePin(
+        LD1_GPIO_Port,
+        LD1_Pin,
+        (Stepper_IsBusy() == 1U) ? GPIO_PIN_SET : GPIO_PIN_RESET
+    );
+
+    /*
+     * LD2[Blue] : heartbeat.c에서 관리
+     * LD3[Red]  : IWDG reset 표시 또는 fault 표시
+     */
+}
 
 /* USER CODE END 0 */
 
@@ -180,6 +203,7 @@ int main(void)
   Timebase_Init();
   Stepper_Init();
   Heartbeat_Init();
+  EStop_Init();
   Protocol_Init();
 
   uint32_t init_ms = HAL_GetTick();
@@ -199,18 +223,8 @@ int main(void)
       Protocol_Process();   // UART 수신 명령 처리
 
       App_UserButton_Update(now); // slider manual jog button
-
       Stepper_Update();
-
-      /* LD1[Green] : stepper busy 표시 */
-      if (Stepper_IsBusy() == 1U)
-      {
-          HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_SET);
-      }
-      else
-      {
-          HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
-      }
+      App_LED_Update();
 
       /* 10 ms 주기 제어 */
       if ((now - prev_10ms) >= 10U)

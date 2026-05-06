@@ -36,12 +36,14 @@
 #define MSG_TYPE_DROPOFF_START  	0x03U  // 수신
 #define MSG_TYPE_DROPOFF_DONE   	0x04U  // 송신
 #define MSG_TYPE_HEARTBEAT      	0x05U  // 수신
+#define MSG_TYPE_ESTOP              0x06U  // 수신
 
 #define FRAME_SIZE_ODOM             28U
 #define FRAME_SIZE_VW               12U
 #define FRAME_SIZE_DROPOFF_START    5U
 #define FRAME_SIZE_DROPOFF_DONE     4U
 #define FRAME_SIZE_HEARTBEAT        4U
+#define FRAME_SIZE_ESTOP            4U
 
 #define RX_FRAME_MAX_SIZE           12U
 #define TIMEOUT_MS                  200U

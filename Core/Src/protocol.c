@@ -12,6 +12,7 @@
 #include "control.h"
 #include "stepper.h"
 #include "heartbeat.h"
+#include "estop.h"
 
 #include <string.h>
 
@@ -210,6 +211,9 @@ static uint16_t Protocol_GetRxFrameSizeByType(uint8_t msg_type)
 
         case MSG_TYPE_HEARTBEAT:
             return FRAME_SIZE_HEARTBEAT;
+
+        case MSG_TYPE_ESTOP:
+            return FRAME_SIZE_ESTOP;
 
         default:
             return 0U;    // unknown
@@ -423,6 +427,11 @@ void Protocol_Process(void)
     switch (msg_type)
     {
         case MSG_TYPE_VW:
+            if (EStop_IsActive() == 1U)
+            {
+                break;   // E-STOP 상태에서는 주행명령 무시
+            }
+
             if (Heartbeat_IsTimeout() == 1U)
             {
                 break;   // timeout 상태에서는 주행명령 무시
@@ -439,6 +448,11 @@ void Protocol_Process(void)
             break;
 
         case MSG_TYPE_DROPOFF_START:
+            if (EStop_IsActive() == 1U)
+            {
+                break;   // E-STOP 상태에서는 dropoff 무시
+            }
+
             if (Heartbeat_IsTimeout() == 1U)
             {
                 break;   // timeout 상태에서는 dropoff 무시
@@ -466,6 +480,10 @@ void Protocol_Process(void)
 
         case MSG_TYPE_HEARTBEAT:
         	Heartbeat_Notify(HAL_GetTick());
+            break;
+
+        case MSG_TYPE_ESTOP:
+            EStop_Trigger();
             break;
 
         default:
