@@ -9,6 +9,8 @@
 #include "tim.h"
 #include "config.h"
 
+#define SLIDER_ONLY_TEST    1U
+
 /* =========================================
  * static 변수 및 함수
  * ========================================= */
@@ -216,6 +218,14 @@ void Stepper_Update(void)
             {
                 slider_curr_idx = slider_target_idx;
 
+        #if SLIDER_ONLY_TEST
+                /*
+                 * Slider-only test mode:
+                 * slider 이동 완료 시 바로 done 처리.
+                 */
+                stepper_state = STEPPER_DONE;
+                break;
+        #else
                 if (dropoff_target_id == 0U)
                 {
                     stepper_state = STEPPER_DONE;
@@ -239,6 +249,7 @@ void Stepper_Update(void)
                 {
                     stepper_state = STEPPER_DONE;
                 }
+        #endif
             }
             break;
 
@@ -332,13 +343,7 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
         return 0U;
     }
 
-    // homing 미완료 상태일때는 dropoff 동작 금지
-    if (homing_done == 0U)
-    {
-        return 0U;
-    }
-
-    // target_id 유효성 판단
+    // target_id 유효성 판단 및 slider_target_idx 계산
     if (Stepper_TargetIdToIdx(target_id) == 0U)
     {
         return 0U;
@@ -347,6 +352,36 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     dropoff_target_id = target_id;
     dropoff_done_latched = 0U;
     arm_hold_start_ms = 0U;
+
+#if SLIDER_ONLY_TEST
+
+    /*
+     * Slider-only test mode:
+     * - arm center 복귀 생략
+     * - arm target 이동 생략
+     * - slider만 target index로 이동
+     */
+    delta = Slider_CalcDelta();
+
+    if (delta != 0)
+    {
+        Stepper_Slider_SetCommand(delta);
+        stepper_state = STEPPER_SLIDER_TO_TARGET;
+    }
+    else
+    {
+        stepper_state = STEPPER_DONE;
+    }
+
+    return 1U;
+
+#else
+
+    // homing 미완료 상태일때는 dropoff 동작 금지
+    if (homing_done == 0U)
+    {
+        return 0U;
+    }
 
     arm_target_idx = 0U;
     delta = Arm_CalcDelta();
@@ -372,6 +407,8 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     }
 
     return 1U;
+
+#endif
 }
 
 // homing 중이든, dropoff 중이든, arm post-init 중이든 다 busy로 봅니다.
