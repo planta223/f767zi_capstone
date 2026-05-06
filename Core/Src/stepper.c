@@ -9,8 +9,6 @@
 #include "tim.h"
 #include "config.h"
 
-#define SLIDER_ONLY_TEST    1U
-
 /* =========================================
  * static 변수 및 함수
  * ========================================= */
@@ -25,10 +23,6 @@ static volatile uint8_t slider_curr_idx      = 0U;
 static volatile uint8_t arm_curr_idx         = 0U;
 static volatile uint8_t slider_target_idx    = 0U; // 0,1,2,3
 static volatile uint8_t arm_target_idx       = 0U; // 0,1,2
-
-static volatile uint8_t homing_started = 0U;
-static volatile uint8_t homing_slider_started = 0U;
-static volatile uint8_t homing_done = 0U;
 
 static volatile uint8_t dropoff_done_latched = 0U;
 static volatile uint8_t dropoff_target_id = 0U;
@@ -128,10 +122,6 @@ void Stepper_Init(void)
     slider_busy = 0U;
     arm_busy    = 0U;
 
-    homing_started        = 0U;
-    homing_slider_started = 0U;
-    homing_done 		  = 1U; // 임시 arm 단독 테스트용
-
     dropoff_done_latched = 0U;
     dropoff_target_id    = 0U;
 
@@ -152,50 +142,11 @@ void Stepper_Update(void)
         case STEPPER_IDLE:
             break;
 
-        case STEPPER_HOMING:
-            /* arm init 시작 전 */
-            if (homing_started == 0U)
-            {
-                homing_started = 1U;
-
-                if (arm_curr_idx != 0U)
-                {
-                    arm_target_idx = 0U;
-                    delta = Arm_CalcDelta();
-
-                    if (delta != 0)
-                    {
-                        Stepper_Arm_SetCommand(delta);
-                        break;
-                    }
-                }
-
-                arm_curr_idx = 0U;
-            }
-
-            /* arm init 완료 후 slider init 시작 */
-            if ((arm_busy == 0U) && (homing_slider_started == 0U))
-            {
-                homing_slider_started = 1U;
-
-                Stepper_Slider_SetCommand(SLIDER_HOMING_PULSES);
-                break;
-            }
-
-            /* slider init 완료 */
-            if ((homing_slider_started == 1U) && (slider_busy == 0U))
-            {
-                slider_curr_idx   = 0U;
-                slider_target_idx = 0U;
-                arm_curr_idx      = 0U;
-                arm_target_idx    = 0U;
-
-                homing_started = 0U;
-                homing_slider_started = 0U;
-                homing_done = 1U;
-
-                stepper_state = STEPPER_IDLE;
-            }
+        case STEPPER_SLIDER_MANUAL:
+            /*
+             * 버튼을 누르고 있는 동안 TIM5가 계속 pulse를 발생시킨다.
+             * 버튼 release 시 Stepper_SliderJogStop()에서 정지한다.
+             */
             break;
 
         case STEPPER_ARM_TO_INIT_PRE:
@@ -218,14 +169,6 @@ void Stepper_Update(void)
             {
                 slider_curr_idx = slider_target_idx;
 
-        #if SLIDER_ONLY_TEST
-                /*
-                 * Slider-only test mode:
-                 * slider 이동 완료 시 바로 done 처리.
-                 */
-                stepper_state = STEPPER_DONE;
-                break;
-        #else
                 if (dropoff_target_id == 0U)
                 {
                     stepper_state = STEPPER_DONE;
@@ -249,7 +192,6 @@ void Stepper_Update(void)
                 {
                     stepper_state = STEPPER_DONE;
                 }
-        #endif
             }
             break;
 
@@ -304,35 +246,6 @@ void Stepper_Update(void)
     }
 }
 
-uint8_t Stepper_StartHoming(void)
-{
-    if (stepper_state != STEPPER_IDLE)
-    {
-        return 0U;
-    }
-
-    /*
-     * 이미 homing 완료 상태이면 반복 homing 금지.
-     * heartbeat emergency stop 등으로 homing_done이 0이 된 경우에만 다시 허용.
-     */
-    if (homing_done == 1U)
-    {
-        return 0U;
-    }
-
-    homing_done = 0U;
-
-    homing_started = 0U;
-    homing_slider_started = 0U;
-
-    dropoff_done_latched = 0U;
-    dropoff_target_id = 0U;
-
-    stepper_state = STEPPER_HOMING;
-
-    return 1U;
-}
-
 uint8_t Stepper_Dropoff_Start(uint8_t target_id)
 {
     int32_t delta;
@@ -343,7 +256,7 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
         return 0U;
     }
 
-    // target_id 유효성 판단 및 slider_target_idx 계산
+    // target_id 유효성 판단 및 slider_target_idx, arm_target_idx 계산
     if (Stepper_TargetIdToIdx(target_id) == 0U)
     {
         return 0U;
@@ -353,46 +266,18 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     dropoff_done_latched = 0U;
     arm_hold_start_ms = 0U;
 
-#if SLIDER_ONLY_TEST
-
     /*
-     * Slider-only test mode:
-     * - arm center 복귀 생략
-     * - arm target 이동 생략
-     * - slider만 target index로 이동
+     * 항상 arm을 먼저 center로 복귀시킨 뒤
+     * slider 이동 → arm target 이동 → hold → arm center 복귀 순서로 수행한다.
      */
-    delta = Slider_CalcDelta();
-
-    if (delta != 0)
-    {
-        Stepper_Slider_SetCommand(delta);
-        stepper_state = STEPPER_SLIDER_TO_TARGET;
-    }
-    else
-    {
-        stepper_state = STEPPER_DONE;
-    }
-
-    return 1U;
-
-#else
-
-    // homing 미완료 상태일때는 dropoff 동작 금지
-    if (homing_done == 0U)
-    {
-        return 0U;
-    }
-
     arm_target_idx = 0U;
     delta = Arm_CalcDelta();
 
-    // 1. 먼저 arm 중앙 복귀
     if (delta != 0)
     {
         Stepper_Arm_SetCommand(delta);
         stepper_state = STEPPER_ARM_TO_INIT_PRE;
     }
-    // 2. 그다음 slider를 목표 위치로 이동 -> arm 목표 위치로 이동 -> arm 중앙 복귀 -> 동작 완료
     else
     {
         arm_curr_idx = 0U;
@@ -407,8 +292,6 @@ uint8_t Stepper_Dropoff_Start(uint8_t target_id)
     }
 
     return 1U;
-
-#endif
 }
 
 // homing 중이든, dropoff 중이든, arm post-init 중이든 다 busy로 봅니다.
@@ -422,6 +305,60 @@ uint8_t Stepper_GetAndClearDropoffDone(void)
     uint8_t ret = dropoff_done_latched;
     dropoff_done_latched = 0U;
     return ret;
+}
+
+void Stepper_SliderJogStart(int8_t dir)
+{
+    if (stepper_state != STEPPER_IDLE)
+    {
+        return;
+    }
+
+    if (slider_busy == 1U)
+    {
+        return;
+    }
+
+    if (dir > 0)
+    {
+        HAL_GPIO_WritePin(slider_DIR_GPIO_Port, slider_DIR_Pin, GPIO_PIN_SET);
+    }
+    else
+    {
+        HAL_GPIO_WritePin(slider_DIR_GPIO_Port, slider_DIR_Pin, GPIO_PIN_RESET);
+    }
+
+    slider_steps_remain = 0U;
+    slider_busy = 1U;
+    stepper_state = STEPPER_SLIDER_MANUAL;
+
+    __HAL_TIM_SET_COUNTER(&htim5, 0U);
+    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, SLIDER_PULSE_DUTY);
+
+    HAL_TIM_Base_Start_IT(&htim5);
+}
+
+void Stepper_SliderJogStop(void)
+{
+    if (stepper_state != STEPPER_SLIDER_MANUAL)
+    {
+        return;
+    }
+
+    __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, 0U);
+    HAL_TIM_Base_Stop_IT(&htim5);
+
+    slider_steps_remain = 0U;
+    slider_busy = 0U;
+
+    /*
+     * 버튼 수동 후진은 slider를 물리적 기준 위치로 되돌리는 용도.
+     * 버튼을 뗀 시점을 software index 0으로 간주한다.
+     */
+    slider_curr_idx = 0U;
+    slider_target_idx = 0U;
+
+    stepper_state = STEPPER_IDLE;
 }
 
 void Stepper_Slider_SetCommand(int32_t cmd)
@@ -480,18 +417,17 @@ void Stepper_Arm_SetCommand(int32_t cmd)
 
 void Stepper_StopAll(void)
 {
-
     __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, 0U);
     __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, 0U);
 
     HAL_TIM_Base_Stop_IT(&htim5);
     HAL_TIM_Base_Stop_IT(&htim8);
 
+    slider_steps_remain = 0U;
+    arm_steps_remain    = 0U;
+
     slider_busy = 0U;
     arm_busy    = 0U;
-
-    homing_started        = 0U;
-    homing_slider_started = 0U;
 
     stepper_state = STEPPER_IDLE;
 
@@ -501,18 +437,17 @@ void Stepper_StopAll(void)
     arm_hold_start_ms = 0U;
 }
 
-void Stepper_EmergencyStop(void)
-{
-    Stepper_StopAll();
-    homing_done = 1U;
-}
-
 void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
     if (htim->Instance == TIM5) // slider
     {
         if (slider_busy == 1U)
         {
+            if (stepper_state == STEPPER_SLIDER_MANUAL)
+            {
+                return;
+            }
+
             if (slider_steps_remain > 0U)
             {
                 slider_steps_remain--;
@@ -521,7 +456,7 @@ void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             if (slider_steps_remain == 0U)
             {
                 __HAL_TIM_SET_COMPARE(&htim5, TIM_CHANNEL_4, 0U);
-                HAL_TIM_Base_Stop_IT(&htim5); // 인터럽트 종료
+                HAL_TIM_Base_Stop_IT(&htim5);
                 slider_busy = 0U;
             }
         }
@@ -538,7 +473,7 @@ void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
             if (arm_steps_remain == 0U)
             {
                 __HAL_TIM_SET_COMPARE(&htim8, TIM_CHANNEL_4, 0U);
-                HAL_TIM_Base_Stop_IT(&htim8); // 인터럽트 종료
+                HAL_TIM_Base_Stop_IT(&htim8);
                 arm_busy = 0U;
             }
         }

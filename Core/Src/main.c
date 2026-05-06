@@ -76,29 +76,50 @@ static void App_UserButton_Update(uint32_t now_ms)
      */
 
     static uint8_t btn_prev = GPIO_PIN_RESET;
-    static uint32_t btn_last_ms = 0U;
+    static uint32_t btn_last_change_ms = 0U;
 
     uint8_t btn_now = HAL_GPIO_ReadPin(USER_Btn_GPIO_Port, USER_Btn_Pin);
 
-    if ((btn_prev == GPIO_PIN_RESET) &&
-        (btn_now == GPIO_PIN_SET) &&
-        ((now_ms - btn_last_ms) > 200U))
+    /*
+     * 간단 debounce:
+     * 마지막 상태 변화 후 30 ms 이내의 변화는 무시
+     */
+    if (btn_now != btn_prev)
     {
-        btn_last_ms = now_ms;
-
-        /*
-         * 임시 slider 수동 후진:
-         * 버튼 1회 누를 때마다 SLIDER_BACK_PULSES 이동
-         */
-        Control_Stop();
-
-        if (Heartbeat_IsTimeout() == 0U)
+        if ((now_ms - btn_last_change_ms) < 30U)
         {
-            Stepper_Slider_SetCommand(SLIDER_HOMING_PULSES);
+            return;
         }
-    }
 
-    btn_prev = btn_now;
+        btn_last_change_ms = now_ms;
+
+        if (btn_now == GPIO_PIN_SET)
+        {
+            /*
+             * 버튼 press:
+             * - 주행 정지
+             * - heartbeat 정상일 때만 slider 수동 후진 시작
+             * - stepper busy이면 Stepper_SliderJogStart() 내부에서 거부
+             */
+            Control_Stop();
+
+            if (Heartbeat_IsTimeout() == 0U)
+            {
+                Stepper_SliderJogStart(-1);
+            }
+        }
+        else
+        {
+            /*
+             * 버튼 release:
+             * - 수동 slider jog 즉시 정지
+             * - release 시점을 slider index 0으로 간주
+             */
+            Stepper_SliderJogStop();
+        }
+
+        btn_prev = btn_now;
+    }
 }
 
 
@@ -177,7 +198,7 @@ int main(void)
       Heartbeat_Update(now); // Timeout 확인
       Protocol_Process();   // UART 수신 명령 처리
 
-      App_UserButton_Update(now); // slider test 중 버튼 비활성화
+      App_UserButton_Update(now); // slider manual jog button
 
       Stepper_Update();
 

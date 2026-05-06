@@ -124,12 +124,6 @@
  */
 #define STEPPER_CMD_PULSES_MAX          41000U
 
-/*
- * Initial homing test:
- * -2000 pulse / 80 pulse/mm = -25 mm
- */
-#define SLIDER_HOMING_PULSES            (-2000)
-
 
 /* -----------------------------------------
  * Arm hardware

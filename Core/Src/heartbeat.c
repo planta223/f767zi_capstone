@@ -82,7 +82,7 @@ void Heartbeat_Update(uint32_t now_ms)
         if (stop_latched == 0U)
         {
             Control_Stop();
-            Stepper_EmergencyStop();
+            Stepper_StopAll();
 
             stop_latched = 1U;
         }

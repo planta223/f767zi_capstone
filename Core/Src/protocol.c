@@ -454,13 +454,12 @@ void Protocol_Process(void)
 
 			if (Stepper_Dropoff_Start(target_id) == 0U)
 			{
-		        /*
-		         * 현재는 실패 응답 frame이 없으므로 추가 동작 없음.
-		         * 실패 원인 예:
-		         * - stepper busy
-		         * - invalid target_id
-		         * - homing 미완료 상태
-		         */
+				/*
+				 * 현재는 실패 응답 frame이 없으므로 추가 동작 없음.
+				 * 실패 원인 예:
+				 * - stepper busy
+				 * - invalid target_id
+				 */
 			}
 
         	break;
