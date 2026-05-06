@@ -80,8 +80,8 @@
 /* -----------------------------------------
  * Slider hardware
  * - Driver    : DM556
- * - Motor     : 57HS11230A4, 3 Nm, 3 A/phase
- * - Current   : 2.7 A start, 3.2 A if torque is insufficient
+ * - Motor     : 57HS5630A4, 1.2 Nm, 3 A/phase
+ * - Current   : 2.7 A
  * - Microstep : 400 pulse/rev
  * - Table     : SFU1605, 5 mm/rev lead, 600 mm stroke
  * ----------------------------------------- */
@@ -132,8 +132,8 @@
 /* -----------------------------------------
  * Arm hardware
  * - Driver    : DM556
- * - Motor     : 57HS5630A4, 1.2 Nm, 3 A/phase
- * - Current   : 3.2 A (2.7A torque was insufficient by our test.)
+ * - Motor     : 57HS1123A4, 3 Nm, 3 A/phase
+ * - Current   : 3.2 A
  * - Microstep : 3200 pulse/rev
  * - Target    : 70 deg
  * ----------------------------------------- */

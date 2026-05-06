@@ -174,7 +174,7 @@ int main(void)
       Heartbeat_Update(now); // Timeout 확인
       Protocol_Process();   // UART 수신 명령 처리
 
-      App_UserButton_Update(now);
+      // App_UserButton_Update(now); // slider test 중 버튼 비활성화
 
       Stepper_Update();
 
