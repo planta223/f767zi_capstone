@@ -79,11 +79,13 @@
 
 /* -----------------------------------------
  * Slider hardware
- * - Driver    : DM556
- * - Motor     : 57HS5630A4, 1.2 Nm, 3 A/phase
- * - Current   : 2.7 A
- * - Microstep : 400 pulse/rev
- * - Table     : SFU1605, 5 mm/rev lead, 600 mm stroke
+ * - Driver           : DM556
+ * - Motor            : 57HS5630A4, 1.2 Nm, 3 A/phase
+ * - Run Current      : 2.7 A
+ * - Standstill Mode  : Half current
+ * - Microstep        : 400 pulse/rev
+ * - Table            : SFU1605, 5 mm/rev lead, 600 mm stroke
+ * - Target    		  : 0mm, 247mm, 494mm
  * ----------------------------------------- */
 #define SLIDER_LEAD_MM_PER_REV          5U
 #define SLIDER_DRIVER_PULSES_PER_REV    400U
@@ -131,11 +133,12 @@
 
 /* -----------------------------------------
  * Arm hardware
- * - Driver    : DM556
- * - Motor     : 57HS1123A4, 3 Nm, 3 A/phase
- * - Current   : 3.2 A
- * - Microstep : 3200 pulse/rev
- * - Target    : 70 deg
+ * - Driver   		  : DM556
+ * - Motor  		  : 57HS1123A4, 3 Nm, 3 A/phase
+ * - Current 		  : 3.2 A
+ * - Standstill Mode  : Full current
+ * - Microstep		  : 3200 pulse/rev
+ * - Target    		  : 70 deg
  * ----------------------------------------- */
 #define ARM_DRIVER_PULSES_PER_REV       3200U
 #define ARM_SIDE_ANGLE_DEG              70U
