@@ -99,6 +99,7 @@
 #define SLIDER_STROKE_PULSES            \
     (SLIDER_STROKE_MM * SLIDER_PULSES_PER_MM)
 
+#define SLIDER_DROPOFF_HOLD_MS          1000U
 /*
  * idx 1 = OFFSET
  * idx 2 = OFFSET + GAP

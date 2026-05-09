@@ -28,6 +28,7 @@ static volatile uint8_t dropoff_done_latched = 0U;
 static volatile uint8_t dropoff_target_id = 0U;
 
 static volatile uint32_t arm_hold_start_ms = 0U;
+static volatile uint32_t slider_hold_start_ms = 0U;
 
 static uint16_t Stepper_AbsClampSteps(int32_t steps)
 {
@@ -126,6 +127,7 @@ void Stepper_Init(void)
     dropoff_target_id    = 0U;
 
     arm_hold_start_ms = 0U;
+    slider_hold_start_ms = 0U;
 
     stepper_state = STEPPER_IDLE;   // 부팅 직후 자동 homing 금지
 }
@@ -169,6 +171,18 @@ void Stepper_Update(void)
             {
                 slider_curr_idx = slider_target_idx;
 
+                /*
+                 * slider가 목표 위치에 도달한 뒤
+                 * 바로 arm을 움직이지 않고 일정 시간 유지한다.
+                 */
+                slider_hold_start_ms = HAL_GetTick();
+                stepper_state = STEPPER_SLIDER_HOLD_AT_TARGET;
+            }
+            break;
+
+        case STEPPER_SLIDER_HOLD_AT_TARGET:
+            if ((HAL_GetTick() - slider_hold_start_ms) >= SLIDER_DROPOFF_HOLD_MS)
+            {
                 if (dropoff_target_id == 0U)
                 {
                     stepper_state = STEPPER_DONE;
@@ -435,6 +449,7 @@ void Stepper_StopAll(void)
     dropoff_target_id    = 0U;
 
     arm_hold_start_ms = 0U;
+    slider_hold_start_ms = 0U;
 }
 
 void Stepper_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
