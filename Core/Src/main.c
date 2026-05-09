@@ -223,6 +223,10 @@ int main(void)
       Protocol_Process();   // UART 수신 명령 처리
 
       App_UserButton_Update(now); // slider manual jog button
+      if (Stepper_GetAndClearDropoffDone() == 1U)
+      {
+          Protocol_SendDropoffDone();
+      }
       Stepper_Update();
       App_LED_Update();
 

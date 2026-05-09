@@ -83,7 +83,7 @@
  * Slider hardware
  * - Driver           : DM556
  * - Motor            : 57HS5630A4, 1.2 Nm, 3 A/phase
- * - Run Current      : 2.7 A
+ * - Run Current      : 2.87 A peak
  * - Standstill Mode  : Half current
  * - Microstep        : 400 pulse/rev
  * - Table            : SFU1605, 5 mm/rev lead, 600 mm stroke
