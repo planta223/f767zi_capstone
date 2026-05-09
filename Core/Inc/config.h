@@ -76,7 +76,7 @@
  * stepper.c
  * ========================================= */
 
-#define SLIDER_PULSE_DUTY     250U     // TIM5 ARR = 499, 50%
+#define SLIDER_PULSE_DUTY     500U     // TIM5 ARR = 999, 50%
 #define ARM_PULSE_DUTY        5000U    // TIM8 ARR = 9999, 50%
 
 /* -----------------------------------------
