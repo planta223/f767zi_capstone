@@ -105,8 +105,8 @@
  * idx 2 = OFFSET + GAP
  * idx 3 = OFFSET + 2*GAP
  */
-#define SLIDER_OFFSET_MM                0U
-#define SLIDER_GAP_MM                   247U
+#define SLIDER_OFFSET_MM                110U
+#define SLIDER_GAP_MM                   265U
 
 #define SLIDER_OFFSET_PULSES            \
     (SLIDER_OFFSET_MM * SLIDER_PULSES_PER_MM)
@@ -138,7 +138,7 @@
  * - Target    		  : 70 deg
  * ----------------------------------------- */
 #define ARM_DRIVER_PULSES_PER_REV       3200U
-#define ARM_SIDE_ANGLE_DEG              70U
+#define ARM_SIDE_ANGLE_DEG              75U
 #define ARM_DROPOFF_HOLD_MS             1000U
 
 #define ARM_SIDE_PULSES                 \
