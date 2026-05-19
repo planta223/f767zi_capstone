@@ -39,8 +39,8 @@ static uint16_t Stepper_AbsClampSteps(int32_t steps)
 
 static uint8_t Stepper_TargetIdToIdx(uint8_t target_id)
 {
-    // target id 유효 범위 검사 (0~6) (실패시 오류반환)
-    if (target_id > 6U)
+    // target id 유효 범위 검사 (0~DROPOFF_TARGET_MAX_ID) (실패시 오류반환)
+    if (target_id > DROPOFF_TARGET_MAX_ID)
     {
         return 0U;
     }

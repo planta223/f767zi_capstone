@@ -79,6 +79,8 @@
 #define SLIDER_PULSE_DUTY     500U     // TIM5 ARR = 999, 50%
 #define ARM_PULSE_DUTY        5000U    // TIM8 ARR = 9999, 50%
 
+#define DROPOFF_TARGET_MAX_ID    4U // idx 0~6 까지의 로직이 있으나, 일단 0~4 까지만 허용
+
 /* -----------------------------------------
  * Slider hardware
  * - Driver           : DM556
