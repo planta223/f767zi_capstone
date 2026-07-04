@@ -2,6 +2,10 @@
 
 > **Status:** Completed on 2026-05-26
 
+<a href="https://www.youtube.com/watch?v=To9g5MGAKJc">
+  <img src="https://img.youtube.com/vi/To9g5MGAKJc/maxresdefault.jpg" width="600">
+</a>
+
 STM32F767ZI 기반 하위 제어 펌웨어입니다. 현재 저장소 기준으로 `NUCLEO-F767ZI` 보드에서 동작하며, 차동 구동 모터 제어, 엔코더 기반 속도 폐루프, 오도메트리 송신, 드롭오프용 stepper 시퀀스, heartbeat failsafe, software E-STOP을 포함합니다.
 
 ## 구현 범위
